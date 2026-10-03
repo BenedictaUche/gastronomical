@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -11,220 +11,187 @@ import {
   Clipboard,
   Download,
   ExternalLink,
-  Filter,
-  ImageIcon,
   Leaf,
   Menu,
-  MoreHorizontal,
   NotebookPen,
   Plus,
   Search,
   Sparkles,
   Star,
   X,
-  UtensilsCrossed,
   WandSparkles,
 } from "lucide-react";
 
+/* ---------------------------------- types --------------------------------- */
+
+type ResearchImage = {
+  position?: number;
+  title?: string;
+  source?: string;
+  thumbnail?: string;
+  original?: string;
+  link?: string;
+};
+
+type ResearchSource = {
+  position?: number;
+  title?: string;
+  source?: string;
+  url?: string;
+  snippet?: string;
+  content?: string;
+  contentType?: string;
+  ingredients?: string[];
+  instructions?: string[];
+  cookTime?: string;
+  yield?: string;
+};
+
+type AnalysisData = {
+  summary: string;
+  commonIngredients: {
+    ingredient: string;
+    sourceCount: number;
+    sourceTitles: string[];
+  }[];
+  differences: {
+    topic: string;
+    details: string;
+    sourceTitles: string[];
+  }[];
+  techniques: {
+    technique: string;
+    details: string;
+    sourceTitles: string[];
+  }[];
+  observations: {
+    observation: string;
+    sourceTitles: string[];
+  }[];
+};
+
+type SavedSession = {
+  id: string;
+  dish: string;
+  context: string;
+  kind: string;
+  model: string;
+  savedAt: string;
+  images: ResearchImage[];
+  sources: ResearchSource[];
+  analysis: AnalysisData | null;
+  brief: {
+    visuals: number[];
+    sources: number[];
+    findings: string[];
+    notes: string;
+  };
+};
+
+/* -------------------------------- constants ------------------------------- */
+
+// Only the Qwen model is actually wired up to /api/analyze right now.
+// The other options stay visible but are marked unavailable so the selector
+// never pretends to offer something that isn't implemented.
 const models = [
-  { name: "Gemma 4", description: "Open-weight · Multimodal" },
-  { name: "Mistral", description: "Open-weight language model" },
-  { name: "Llama", description: "Open-weight language model" },
-  { name: "Custom model", description: "Bring your own model" },
-];
-const visuals = [
-  [
-    "Mofongo with garlic and pork cracklings",
-    "Puerto Rican Food Guide",
-    "Traditional",
-    "https://images.unsplash.com/photo-1515003197210-e0cd71810b5f?auto=format&fit=crop&w=900&q=85",
-    "The source discusses Puerto Rican mofongo and shows this preparation.",
-  ],
-  [
-    "A mortar of mashed plantains",
-    "Sazón Journal",
-    "Home-style",
-    "https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=900&q=85",
-    "A close look at the traditional pilón used to make mofongo.",
-  ],
-  [
-    "Mofongo served with broth",
-    "Taste Puerto Rico",
-    "Traditional",
-    "https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=900&q=85",
-    "This visual pairs mofongo with a light broth, a common serving style.",
-  ],
-  [
-    "Golden fried plantains",
-    "Island Table",
-    "Home-style",
-    "https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=900&q=85",
-    "The image shows the plantains before they are crushed and seasoned.",
-  ],
-  [
-    "Restaurant-style mofongo bowl",
-    "Mesa Moderna",
-    "Restaurant",
-    "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=900&q=85",
-    "A contemporary plating reference from a restaurant-focused source.",
-  ],
-  [
-    "Pilon and wooden masher",
-    "Caribe Kitchen",
-    "Traditional",
-    "https://images.unsplash.com/photo-1556910103-1c02745aae4d?auto=format&fit=crop&w=900&q=85",
-    "The source highlights the tools used for a classic preparation.",
-  ],
-  [
-    "Mofongo with avocado garnish",
-    "The Local Plate",
-    "Other",
-    "https://images.unsplash.com/photo-1541518763669-27fef04b14ea?auto=format&fit=crop&w=900&q=85",
-    "A modern interpretation that keeps the mashed plantain base.",
-  ],
-  [
-    "Family-style Puerto Rican table",
-    "Diaspora Digest",
-    "Home-style",
-    "https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=900&q=85",
-    "A home-style context image from a story about family recipes.",
-  ],
-  [
-    "Crisp plantain rounds",
-    "Good Food Stories",
-    "Other",
-    "https://images.unsplash.com/photo-1601050690117-94f5f6fa8bd7?auto=format&fit=crop&w=900&q=85",
-    "The source uses this image to explain the frying step.",
-  ],
-  [
-    "Mofongo in a stone mortar",
-    "Puerto Rico Eats",
-    "Traditional",
-    "https://images.unsplash.com/photo-1559339352-11d035aa65de?auto=format&fit=crop&w=900&q=85",
-    "A visual reference showing how the finished dish is shaped in the pilón.",
-  ],
-  [
-    "Garlic, olive oil and plantain",
-    "Cooked by Marisol",
-    "Home-style",
-    "https://images.unsplash.com/photo-1505253716362-afaea1d3d1af?auto=format&fit=crop&w=900&q=85",
-    "A creator-led recipe source focused on the foundational ingredients.",
-  ],
-  [
-    "Mofongo with shrimp",
-    "Coastal Kitchen",
-    "Restaurant",
-    "https://images.unsplash.com/photo-1559339352-11d035aa65de?auto=format&fit=crop&w=900&q=85",
-    "A seafood variation presented by a coastal restaurant source.",
-  ],
-];
-const recipes = [
   {
-    title: "Traditional Puerto Rican Mofongo",
-    source: "Puerto Rican Food Guide",
-    type: "Traditional",
-    desc: "A classic preparation built around fried green plantains, garlic, olive oil, and chicharrón.",
-    ingredients: [
-      "Green plantains",
-      "Garlic cloves",
-      "Pork cracklings",
-      "Olive oil",
-      "Salt",
-      "Chicken broth",
-    ],
-    prep: "Fry the plantains until tender, then pound them warm with garlic, salt, and cracklings. Shape in a pilón and serve with broth.",
-    url: "#",
+    id: "qwen/qwen3.8-27b:free",
+    name: "Qwen 3.8 27B",
+    description: "Open-weight · Active for analysis",
+    available: true,
   },
   {
-    title: "Mofongo Recipe",
-    source: "Sazón Journal",
-    type: "Home-style",
-    desc: "A family-style version with a generous garlic seasoning and optional crispy pork.",
-    ingredients: [
-      "Green plantains",
-      "Garlic",
-      "Olive oil",
-      "Bacon or pork cracklings",
-      "Chicken stock",
-    ],
-    prep: "Mash fried plantains in batches with garlic oil and pork, loosening the mixture with warm stock.",
-    url: "#",
+    id: "gemma-4",
+    name: "Gemma 4",
+    description: "Unavailable — not wired up yet",
+    available: false,
   },
   {
-    title: "How to Make Mofongo",
-    source: "Cooked by Marisol",
-    type: "Food creator",
-    desc: "A creator’s practical walkthrough with notes on texture, timing, and serving.",
-    ingredients: ["Plantains", "Garlic", "Salt", "Cilantro", "Pork rinds"],
-    prep: "Keep the plantains warm while pounding and add seasoning gradually until the mixture holds its shape.",
-    url: "#",
+    id: "mistral",
+    name: "Mistral",
+    description: "Unavailable — not wired up yet",
+    available: false,
   },
   {
-    title: "Classic Mofongo",
-    source: "Taste Puerto Rico",
-    type: "Recipe publication",
-    desc: "A concise traditional recipe that serves the mofongo with a savory garlic broth.",
-    ingredients: [
-      "Green plantains",
-      "Garlic",
-      "Pork cracklings",
-      "Broth",
-      "Cilantro",
-    ],
-    prep: "Fry, pound, and shape the plantain mixture. Pour broth around the base just before serving.",
-    url: "#",
-  },
-  {
-    title: "Mofongo with Shrimp",
-    source: "Coastal Kitchen",
-    type: "Modern interpretation",
-    desc: "A seafood-forward variation that keeps the classic plantain and garlic foundation.",
-    ingredients: ["Plantains", "Shrimp", "Garlic", "Butter", "Stock", "Lime"],
-    prep: "Prepare the mofongo base, then top with garlic shrimp and a spoonful of pan sauce.",
-    url: "#",
-  },
-  {
-    title: "Mofongo de Yuca",
-    source: "Mesa Moderna",
-    type: "Modern interpretation",
-    desc: "A contemporary root-vegetable variation inspired by the traditional technique.",
-    ingredients: ["Cassava", "Garlic", "Olive oil", "Pork cracklings", "Salt"],
-    prep: "Boil cassava until tender, then mash with the seasoned garlic oil and shape while warm.",
-    url: "#",
+    id: "llama",
+    name: "Llama",
+    description: "Unavailable — not wired up yet",
+    available: false,
   },
 ];
-const agreements = [
-  "Green plantains form the base of the dish.",
-  "Garlic is central to the seasoning.",
-  "The plantains are cooked before they are mashed.",
-  "Mofongo is shaped and served as a mound or ball.",
-  "A savory broth is commonly served alongside.",
-  "Texture depends on pounding while the plantain is warm.",
+
+const DEFAULT_MODEL_ID = "qwen/qwen3.8-27b:free";
+
+const modelLabel = (id: string) =>
+  models.find((m) => m.id === id)?.name ?? id;
+
+const researchKinds = [
+  "Recipe",
+  "Recipe roundup",
+  "Food discovery",
+  "Just researching",
 ];
-const differences = [
-  "Cooking method: Most sources fry the plantains before mashing, while some use boiling or baked alternatives.",
-  "Protein: Some recipes include pork cracklings while others omit them or use seafood.",
-  "Seasoning: Garlic appears frequently, but quantities and additional seasonings vary.",
-  "Serving: Sources differ in how the finished mofongo is shaped and what is placed around it.",
-];
+
+const SESSIONS_KEY = "gastronomical-sessions";
+const contentTypeLabel = (type?: string) =>
+  type === "recipe"
+    ? "Recipe"
+    : type === "article"
+      ? "Article"
+      : type === "social"
+        ? "Social post"
+        : "Web source";
+
+function loadSessions(): SavedSession[] {
+  try {
+    const raw = window.localStorage.getItem(SESSIONS_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(
+      (item): item is SavedSession =>
+        item && typeof item.dish === "string" && Array.isArray(item.sources),
+    );
+  } catch {
+    return [];
+  }
+}
+
+function splitSummary(summary: string): { headline: string; rest: string } {
+  const match = summary.match(/^([\s\S]*?[.!?])(\s+[\s\S]*)?$/);
+  if (!match) return { headline: summary, rest: "" };
+  return { headline: match[1], rest: (match[2] ?? "").trim() };
+}
+
+/* ---------------------------------- page ---------------------------------- */
 
 export default function Page() {
   const [view, setView] = useState<"home" | "research" | "saved">("home");
-  const [dish, setDish] = useState("Mofongo");
-  const [context, setContext] = useState("Traditional Puerto Rican");
+  const [dish, setDish] = useState("");
+  const [context, setContext] = useState("");
   const [kind, setKind] = useState("Recipe");
-  const [extra, setExtra] = useState(
-    "Focus on traditional presentation and recipes from food creators or local sources.",
-  );
+  const [extra, setExtra] = useState("");
   const [showExtra, setShowExtra] = useState(false);
-  const [model, setModel] = useState("Gemma 4");
+  const [model, setModel] = useState(DEFAULT_MODEL_ID);
   const [modelOpen, setModelOpen] = useState(false);
+
   const [loading, setLoading] = useState(false);
-  const [filter, setFilter] = useState("All");
+  const [phase, setPhase] = useState<"searching" | "analyzing" | null>(null);
+  const [researchError, setResearchError] = useState<string | null>(null);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
+
+  const [researchData, setResearchData] = useState<{
+    images: ResearchImage[];
+    sources: ResearchSource[];
+  } | null>(null);
+  const [analysisData, setAnalysisData] = useState<AnalysisData | null>(null);
+  const [analysisModel, setAnalysisModel] = useState("");
+
   const [selectedVisual, setSelectedVisual] = useState<number | null>(null);
-  const [selectedRecipe, setSelectedRecipe] = useState<number | null>(null);
+  const [selectedSource, setSelectedSource] = useState<number | null>(null);
+
   const [savedVisuals, setSavedVisuals] = useState<number[]>([]);
-  const [savedRecipes, setSavedRecipes] = useState<number[]>([]);
+  const [savedSources, setSavedSources] = useState<number[]>([]);
   const [savedFindings, setSavedFindings] = useState<string[]>([]);
   const [notes, setNotes] = useState("");
   const [savedSession, setSavedSession] = useState(false);
@@ -233,102 +200,48 @@ export default function Page() {
   const [clearOpen, setClearOpen] = useState(false);
   const [briefOpen, setBriefOpen] = useState(false);
 
-  const [researchData, setResearchData] = useState<{
-    images: any[]
-    sources: any[]
-    recipes: any[]
-  } | null>(null)
+  const [sessions, setSessions] = useState<SavedSession[]>([]);
 
-  const [analysisData, setAnalysisData] = useState<any | null>(null)
+  useEffect(() => {
+    setSessions(loadSessions());
+  }, []);
 
-  const liveVisuals = researchData?.images?.map((image, index) => ({
-    id: image.position ?? index + 1,
-    title: image.title || `${dish} image`,
-    source: image.source || "Google Images",
-    category: "Search result",
-    imageUrl: image.thumbnail || image.original,
-    sourceUrl: image.link || image.original,
-  })) ?? []
+  const images = researchData?.images ?? [];
+  const sources = researchData?.sources ?? [];
 
-  const liveRecipes = researchData?.sources?.map((source, index) => ({
-    id: source.position ?? index + 1,
-    title: source.title || "Untitled source",
-    source: source.source || source.displayed_link || "Web source",
-    type: "Web source",
-    desc: source.snippet || "",
-    url: source.link || "#",
-  })) ?? []
-
-  const filteredVisuals = liveVisuals.filter((visual) => {
-    if (filter === "All") return true
-    return visual.category === filter
-  })
+  const visuals = useMemo(
+    () =>
+      images.map((image, index) => ({
+        id: index,
+        title:
+          image.title || `${dish || "This dish"} — Google Images result`,
+        source: image.source || "Google Images",
+        imageUrl: image.thumbnail || image.original || "",
+        originalUrl: image.original || image.thumbnail || "",
+        sourceUrl: image.link || image.original || image.thumbnail || "",
+      })),
+    [images, dish],
+  );
 
   const savedCount =
     savedVisuals.length +
-    savedRecipes.length +
+    savedSources.length +
     savedFindings.length +
     (notes.trim() ? 1 : 0);
-  const startResearch = async () => {
-    if (!dish.trim()) return
 
-    setLoading(true)
+  const analysisBusy = phase === "analyzing" || reanalyzing;
+  const activeAnalysisModel = analysisModel || modelLabel(model);
 
-    try {
-      const response = await fetch("/api/research", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          dish,
-          context,
-          kind,
-          extra,
-        }),
-      })
+  const maxIngredientCount = Math.max(
+    1,
+    ...(analysisData?.commonIngredients ?? []).map((item) => item.sourceCount),
+  );
 
-      const data = await response.json()
+  const summarySplit = useMemo(
+    () => splitSummary(analysisData?.summary ?? ""),
+    [analysisData],
+  );
 
-      console.log("Research result:", data)
-
-      if (!response.ok) {
-        throw new Error(data.error || "Research failed")
-      }
-
-      setResearchData(data)
-
-      if (data.recipes?.length) {
-        const analysisResponse = await fetch("/api/analyze", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            dish,
-            context,
-            recipes: data.recipes.map((item: any) => item.recipe),
-          }),
-        })
-
-        const analysisData = await analysisResponse.json()
-
-        if (!analysisResponse.ok) {
-          throw new Error(
-            analysisData.error || "Recipe analysis failed"
-          )
-        }
-
-        setAnalysisData(analysisData.analysis)
-      }
-
-      setLoading(false)
-      setView("research")
-    } catch (error) {
-      console.error("Research failed:", error)
-      setLoading(false)
-    }
-  }
   const toggle = (
     list: number[],
     setList: (v: number[]) => void,
@@ -337,30 +250,257 @@ export default function Page() {
     setList(
       list.includes(index) ? list.filter((x) => x !== index) : [...list, index],
     );
-  const runReanalysis = () => {
-    setReanalyzing(true);
-    setTimeout(() => setReanalyzing(false), 1100);
+
+  const toggleFinding = (text: string) =>
+    setSavedFindings((current) =>
+      current.includes(text)
+        ? current.filter((f) => f !== text)
+        : [...current, text],
+    );
+
+  const withSourceTitles = (titles: string[]) =>
+    titles.length ? ` (Sources: ${titles.join(", ")})` : "";
+
+  const resetResearchState = () => {
+    setResearchData(null);
+    setAnalysisData(null);
+    setAnalysisModel("");
+    setAnalysisError(null);
+    setResearchError(null);
+    setSelectedVisual(null);
+    setSelectedSource(null);
+    setSavedVisuals([]);
+    setSavedSources([]);
+    setSavedFindings([]);
+    setNotes("");
+    setSavedSession(false);
+    setBriefOpen(false);
   };
-  const briefText = `FOOD RESEARCH\n\n${dish}\n${context}\nResearch model: ${model}\n\nKEY FINDINGS\n${agreements.join("\n")}\n\nRECIPE FINDINGS\nGreen plantains appear in ${recipes.length}/${recipes.length} sources. Garlic appears in 5/${recipes.length} sources. Sources differ on protein, cooking method, and serving style.\n\nMY NOTES\n${notes || "No notes added."}\n\nSAVED VISUAL REFERENCES\n${savedVisuals.map((i) => visuals[i][0]).join("\n") || "None"}\n\nSAVED RECIPE SOURCES\n${savedRecipes.map((i) => recipes[i].title).join("\n") || "None"}\n\nSAVED FINDINGS\n${savedFindings.join("\n") || "None"}`;
+
+  const requestAnalysis = async (sourcesToAnalyze: ResearchSource[]) => {
+    const response = await fetch("/api/analyze", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ dish, context, sources: sourcesToAnalyze, model }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "AI analysis failed");
+    }
+
+    return data;
+  };
+
+  const startResearch = async () => {
+    if (!dish.trim() || loading) return;
+
+    // A new query must never show anything from the previous one.
+    resetResearchState();
+    setLoading(true);
+    setPhase("searching");
+
+    try {
+      const response = await fetch("/api/research", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ dish, context, kind, extra }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Research failed. Please try again.");
+      }
+
+      const nextResearch = {
+        images: Array.isArray(data.images) ? data.images : [],
+        sources: Array.isArray(data.sources) ? data.sources : [],
+      };
+
+      setResearchData(nextResearch);
+      setView("research");
+
+      if (nextResearch.sources.length) {
+        setPhase("analyzing");
+
+        try {
+          const analysisResult = await requestAnalysis(nextResearch.sources);
+          setAnalysisData(analysisResult.analysis);
+          setAnalysisModel(analysisResult.model || "");
+        } catch {
+          setAnalysisError(
+            "Sources found, but AI analysis couldn't be completed.",
+          );
+        }
+      } else {
+        setAnalysisError(
+          "No web sources were found for this search, so there is nothing to analyze yet.",
+        );
+      }
+    } catch (error) {
+      setResearchError(
+        error instanceof Error
+          ? error.message
+          : "Research failed. Please try again.",
+      );
+    } finally {
+      setLoading(false);
+      setPhase(null);
+    }
+  };
+
+  const runReanalysis = async () => {
+    if (!sources.length || reanalyzing) return;
+
+    setReanalyzing(true);
+    setAnalysisError(null);
+
+    try {
+      const analysisResult = await requestAnalysis(sources);
+      setAnalysisData(analysisResult.analysis);
+      setAnalysisModel(analysisResult.model || "");
+    } catch {
+      setAnalysisError(
+        "Sources found, but AI analysis couldn't be completed.",
+      );
+    } finally {
+      setReanalyzing(false);
+    }
+  };
+
+  const saveSession = () => {
+    if (!researchData) return;
+
+    const session: SavedSession = {
+      id: `${Date.now()}`,
+      dish,
+      context,
+      kind,
+      model,
+      savedAt: new Date().toISOString(),
+      images: researchData.images,
+      sources: researchData.sources,
+      analysis: analysisData,
+      brief: {
+        visuals: savedVisuals,
+        sources: savedSources,
+        findings: savedFindings,
+        notes,
+      },
+    };
+
+    const next = [session, ...sessions].slice(0, 12);
+    setSessions(next);
+
+    try {
+      window.localStorage.setItem(SESSIONS_KEY, JSON.stringify(next));
+    } catch {
+      // Storage can be unavailable (private mode / quota); keep the UI working.
+    }
+
+    setSavedSession(true);
+  };
+
+  const openSession = (session: SavedSession) => {
+    resetResearchState();
+    setDish(session.dish);
+    setContext(session.context);
+    setKind(session.kind || "Recipe");
+    setModel(session.model || DEFAULT_MODEL_ID);
+    setResearchData({
+      images: session.images ?? [],
+      sources: session.sources ?? [],
+    });
+    setAnalysisData(session.analysis ?? null);
+    setSavedVisuals(session.brief?.visuals ?? []);
+    setSavedSources(session.brief?.sources ?? []);
+    setSavedFindings(session.brief?.findings ?? []);
+    setNotes(session.brief?.notes ?? "");
+    setSavedSession(true);
+    setView("research");
+  };
+
+  const briefText = useMemo(() => {
+    const lines: string[] = [
+      "FOOD RESEARCH",
+      "",
+      dish || "Untitled research",
+      context,
+      `Research type: ${kind}`,
+      `Research model: ${modelLabel(model)}`,
+    ];
+
+    if (analysisData?.summary) {
+      lines.push("", "SUMMARY", analysisData.summary);
+    }
+
+    lines.push("", "MY NOTES", notes.trim() || "No notes added.");
+
+    lines.push(
+      "",
+      "SAVED VISUAL REFERENCES",
+      savedVisuals.map((i) => {
+        const v = visuals[i];
+        return v ? `- ${v.title} — ${v.source} (${v.sourceUrl})` : "";
+      }).filter(Boolean).join("\n") || "None",
+    );
+
+    lines.push(
+      "",
+      "SAVED RESEARCH SOURCES",
+      savedSources.map((i) => {
+        const s = sources[i];
+        if (!s) return "";
+        return `- ${s.title || "Untitled source"} — ${s.source || "Web"}${s.url ? ` (${s.url})` : ""}`;
+      }).filter(Boolean).join("\n") || "None",
+    );
+
+    lines.push(
+      "",
+      "SAVED FINDINGS",
+      savedFindings.join("\n") || "None",
+    );
+
+    return lines.join("\n");
+  }, [
+    analysisData,
+    context,
+    dish,
+    kind,
+    model,
+    notes,
+    savedFindings,
+    savedSources,
+    savedVisuals,
+    sources,
+    visuals,
+  ]);
+
   const copyBrief = async () => {
     await navigator.clipboard?.writeText(briefText);
     setCopied(true);
     setTimeout(() => setCopied(false), 1800);
   };
+
   const downloadBrief = () => {
     const a = document.createElement("a");
     a.href = URL.createObjectURL(new Blob([briefText], { type: "text/plain" }));
-    a.download = `${dish.toLowerCase().replaceAll(" ", "-")}-research-brief.txt`;
+    a.download = `${(dish || "research").toLowerCase().replaceAll(" ", "-")}-research-brief.txt`;
     a.click();
     URL.revokeObjectURL(a.href);
   };
+
   const clearBrief = () => {
     setSavedVisuals([]);
-    setSavedRecipes([]);
+    setSavedSources([]);
     setSavedFindings([]);
     setNotes("");
     setClearOpen(false);
   };
+
+  const recentSessions = sessions.slice(0, 3);
 
   return (
     <div className="app-shell">
@@ -392,7 +532,7 @@ export default function Page() {
               onClick={() => setModelOpen(!modelOpen)}
             >
               <span className="model-dot" />
-              {model}
+              {modelLabel(model)}
               <ChevronDown size={14} />
             </button>
             {modelOpen && (
@@ -400,14 +540,13 @@ export default function Page() {
                 <p className="eyebrow">Research model</p>
                 {models.map((m) => (
                   <button
-                    key={m.name}
+                    key={m.id}
                     className={
-                      model === m.name
-                        ? "model-option selected"
-                        : "model-option"
+                      model === m.id ? "model-option selected" : "model-option"
                     }
+                    disabled={!m.available}
                     onClick={() => {
-                      setModel(m.name);
+                      setModel(m.id);
                       setModelOpen(false);
                     }}
                   >
@@ -415,12 +554,11 @@ export default function Page() {
                       <strong>{m.name}</strong>
                       <small>{m.description}</small>
                     </span>
-                    {model === m.name && <Check size={15} />}
+                    {model === m.id && <Check size={15} />}
                   </button>
                 ))}
                 <p className="model-note">
-                  Different models may produce different interpretations. Switch
-                  models to compare.
+                  Only models marked active are wired up for analysis right now.
                 </p>
               </div>
             )}
@@ -430,6 +568,7 @@ export default function Page() {
           </button>
         </div>
       </header>
+
       {view === "home" && (
         <main className="home-page">
           <div className="home-intro">
@@ -462,7 +601,7 @@ export default function Page() {
                 <input
                   value={dish}
                   onChange={(e) => setDish(e.target.value)}
-                  placeholder="e.g. Mofongo, tres leches, jollof rice..."
+                  placeholder="e.g. Mofongo, ekpang nkukwo, jollof rice..."
                 />
               </label>
               <label>
@@ -470,19 +609,14 @@ export default function Page() {
                 <input
                   value={context}
                   onChange={(e) => setContext(e.target.value)}
-                  placeholder="e.g. Traditional Puerto Rican..."
+                  placeholder="e.g. Traditional Puerto Rican, Nigerian Ibibio..."
                 />
               </label>
             </div>
             <fieldset>
               <legend>What are you researching for?</legend>
               <div className="choice-row">
-                {[
-                  "Recipe",
-                  "Recipe roundup",
-                  "Food discovery",
-                  "Just researching",
-                ].map((x) => (
+                {researchKinds.map((x) => (
                   <button
                     type="button"
                     key={x}
@@ -513,12 +647,17 @@ export default function Page() {
                 />
               )}
             </div>
+            {researchError && (
+              <p className="form-error" role="alert">
+                {researchError}
+              </p>
+            )}
             <div className="form-footer">
               <div className="model-summary">
                 <span className="model-dot" />
                 <span>
                   <small>Research model</small>
-                  <strong>{model}</strong>
+                  <strong>{modelLabel(model)}</strong>
                 </span>
                 <button onClick={() => setModelOpen(true)}>
                   <ChevronDown size={14} />
@@ -531,7 +670,10 @@ export default function Page() {
               >
                 {loading ? (
                   <>
-                    <span className="spinner" /> Researching
+                    <span className="spinner" />
+                    {phase === "analyzing"
+                      ? "Analyzing sources"
+                      : "Researching"}
                   </>
                 ) : (
                   <>
@@ -555,47 +697,43 @@ export default function Page() {
           >
             <WandSparkles size={15} /> Try an example <ArrowRight size={14} />
           </button>
-          <div className="recent">
-            <div>
-              <span className="eyebrow">Your workspace</span>
-              <h3>Recent research</h3>
+          {recentSessions.length > 0 && (
+            <div className="recent">
+              <div>
+                <span className="eyebrow">Your workspace</span>
+                <h3>Recent research</h3>
+              </div>
+              <div className="recent-items">
+                {recentSessions.map((session) => (
+                  <button key={session.id} onClick={() => openSession(session)}>
+                    <span
+                      className="recent-thumb"
+                      style={
+                        session.images?.[0]?.thumbnail
+                          ? {
+                              backgroundImage: `url(${session.images[0].thumbnail})`,
+                            }
+                          : undefined
+                      }
+                    />
+                    <span>
+                      <strong>{session.dish}</strong>
+                      <small>{session.context || "No context"}</small>
+                    </span>
+                    <ChevronRight size={15} />
+                  </button>
+                ))}
+              </div>
             </div>
-            <div className="recent-items">
-              {[
-                ["Mofongo", "Traditional Puerto Rican"],
-                ["Jollof Rice", "Nigerian home-style"],
-                ["Tres Leches", "Traditional Mexican"],
-              ].map(([x, y]) => (
-                <button
-                  key={x}
-                  onClick={() => {
-                    setDish(x);
-                    setContext(y);
-                    setView("research");
-                  }}
-                >
-                  <span className="recent-thumb" />
-                  <span>
-                    <strong>{x}</strong>
-                    <small>{y}</small>
-                  </span>
-                  <ChevronRight size={15} />
-                </button>
-              ))}
-            </div>
-          </div>
+          )}
         </main>
       )}
+
       {view === "saved" && (
-        <SavedResearch
-          onOpen={(d, c) => {
-            setDish(d);
-            setContext(c);
-            setView("research");
-          }}
-        />
+        <SavedResearch sessions={sessions} onOpen={openSession} />
       )}
-      {view === "research" && (
+
+      {view === "research" && researchData && (
         <main className="workspace">
           <div className="workspace-head">
             <div>
@@ -605,9 +743,16 @@ export default function Page() {
               <h1>{dish}</h1>
               <p>{context}</p>
               <div className="meta">
-                <span>18 visual references</span>
-                <i /> <span>6 recipe sources</span>
-                <i /> <span>Analyzed with {model}</span>
+                <span>{visuals.length} visual references</span>
+                <i /> <span>{sources.length} research sources</span>
+                <i />{" "}
+                <span>
+                  {analysisData
+                    ? `Analyzed with ${activeAnalysisModel}`
+                    : analysisBusy
+                      ? "Analyzing sources…"
+                      : "Analysis unavailable"}
+                </span>
               </div>
             </div>
             <div className="workspace-actions">
@@ -621,52 +766,31 @@ export default function Page() {
                 className={
                   savedSession ? "secondary-button saved" : "secondary-button"
                 }
-                onClick={() => setSavedSession(!savedSession)}
+                onClick={saveSession}
+                disabled={savedSession}
               >
                 {savedSession ? <Check size={15} /> : <Bookmark size={15} />}
                 {savedSession ? "Research saved" : "Save research"}
               </button>
             </div>
           </div>
+
           <section className="section visual-section">
             <SectionHeader
               eyebrow="01 / Visual discovery"
               title="Visual references"
-              description="Browse images that may help you understand or illustrate the dish in the requested context."
+              description="Browse images found for this dish so you can see how it is presented and served."
             />
-            <div className="filter-bar">
-              <div className="filters">
-                <Filter size={14} />
-                {[
-                  "All",
-                  "Traditional",
-                  "Home-style",
-                  "Restaurant",
-                  "Other",
-                ].map((x) => (
-                  <button
-                    className={filter === x ? "filter-active" : ""}
-                    onClick={() => setFilter(x)}
-                    key={x}
-                  >
-                    {x}
-                  </button>
-                ))}
-              </div>
-              <button className="sort-button">
-                Most relevant <ChevronDown size={14} />
-              </button>
-            </div>
-            <div className="visual-grid">
-              {filteredVisuals.map((v) => {
-                return (
+            {visuals.length ? (
+              <div className="visual-grid">
+                {visuals.map((v) => (
                   <article className="visual-card" key={v.id}>
                     <button
                       className="visual-image"
                       onClick={() => setSelectedVisual(v.id)}
                     >
                       <img src={v.imageUrl} alt={v.title} />
-                      <span className="image-badge">{v.category}</span>
+                      <span className="image-badge">Google Images</span>
                     </button>
                     <div className="visual-info">
                       <div>
@@ -688,9 +812,7 @@ export default function Page() {
                         ) : (
                           <Plus size={14} />
                         )}
-                        {savedVisuals.includes(v.id)
-                          ? "Saved"
-                          : "Save to brief"}
+                        {savedVisuals.includes(v.id) ? "Saved" : "Save to brief"}
                       </button>
                     </div>
                     <button
@@ -700,151 +822,216 @@ export default function Page() {
                       <ExternalLink size={12} /> View source context
                     </button>
                   </article>
-                );
-              })}
-            </div>
-
-
+                ))}
+              </div>
+            ) : (
+              <div className="section-empty">
+                No images were found for this search. Try adding a context to
+                the query.
+              </div>
+            )}
           </section>
+
           <section className="section recipe-section">
             <SectionHeader
               eyebrow="02 / Source discovery"
-              title="Recipe sources"
-              description="Compare recipes from different sources before deciding what information to use."
+              title="Research sources"
+              description="Review the pages found for this search — structured recipes, articles, and social posts alike."
             />
-            <div className="recipe-list">
-              {liveRecipes.map((r, i) => (
-                <article className="recipe-row" key={r.title}>
-                  <div className="recipe-index">0{i + 1}</div>
-                  <div className="recipe-main">
-                    <div className="recipe-title">
-                      <h3>{r.title}</h3>
-                      <span>{r.type}</span>
+            {sources.length ? (
+              <div className="recipe-list">
+                {sources.map((source, i) => (
+                  <article
+                    className="recipe-row"
+                    key={source.url || source.title || i}
+                  >
+                    <div className="recipe-index">0{i + 1}</div>
+                    <div className="recipe-main">
+                      <div className="recipe-title">
+                        <h3>{source.title || "Untitled source"}</h3>
+                        <span>{contentTypeLabel(source.contentType)}</span>
+                      </div>
+                      <p>
+                        {source.snippet ||
+                          (source.content
+                            ? `${source.content.slice(0, 180)}…`
+                            : "No preview text was available for this source.")}
+                      </p>
+                      <small>{source.source || "Web source"}</small>
                     </div>
-                    <p>{r.desc}</p>
-                    <small>{r.source}</small>
-                  </div>
-                  <div className="row-actions">
-                    <button
-                      className="text-button"
-                      onClick={() => setSelectedRecipe(i)}
-                    >
-                      View source <ArrowRight size={14} />
-                    </button>
-                    <button
-                      className={
-                        savedRecipes.includes(i)
-                          ? "save-button saved"
-                          : "save-button"
-                      }
-                      onClick={() => toggle(savedRecipes, setSavedRecipes, i)}
-                    >
-                      {savedRecipes.includes(i) ? (
-                        <Check size={14} />
-                      ) : (
-                        <Plus size={14} />
-                      )}
-                      {savedRecipes.includes(i) ? "Saved" : "Save"}
-                    </button>
-                  </div>
-                </article>
-              ))}
-            </div>
+                    <div className="row-actions">
+                      <button
+                        className="text-button"
+                        onClick={() => setSelectedSource(i)}
+                      >
+                        View source <ArrowRight size={14} />
+                      </button>
+                      <button
+                        className={
+                          savedSources.includes(i)
+                            ? "save-button saved"
+                            : "save-button"
+                        }
+                        onClick={() =>
+                          toggle(savedSources, setSavedSources, i)
+                        }
+                      >
+                        {savedSources.includes(i) ? (
+                          <Check size={14} />
+                        ) : (
+                          <Plus size={14} />
+                        )}
+                        {savedSources.includes(i) ? "Saved" : "Save"}
+                      </button>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <div className="section-empty">
+                No web sources were found for this search.
+              </div>
+            )}
           </section>
+
           <section className="section comparison-section">
             <SectionHeader
-              eyebrow="03 / Recipe comparison"
-              title="Compare recipes"
+              eyebrow="03 / Source comparison"
+              title="Compare sources"
               description="See what the sources have in common and where they differ."
             />
-            <div className="comparison-grid">
-              <div className="comparison-card">
-                <div className="card-label">
-                  <span>Common ingredients</span>
-                  <span>Source agreement</span>
-                </div>
-                {[
-                  ["Green plantains", "6/6"],
-                  ["Garlic", "5/6"],
-                  ["Salt", "5/6"],
-                  ["Pork cracklings", "4/6"],
-                  ["Olive oil", "4/6"],
-                ].map(([a, b]) => (
-                  <div className="ingredient" key={a}>
-                    <span>{a}</span>
-                    <div>
-                      <span className="bar">
-                        <i style={{ width: `${(parseInt(b) / 6) * 100}%` }} />
-                      </span>
-                      <strong>{b}</strong>
+            {analysisBusy ? (
+              <div className="section-empty">
+                <span className="spinner dark" /> Analyzing sources…
+              </div>
+            ) : (
+              <>
+                <div className="comparison-grid">
+                  <div className="comparison-card">
+                    <div className="card-label">
+                      <span>Common ingredients</span>
+                      <span>Source agreement</span>
                     </div>
-                  </div>
-                ))}
-              </div>
-              <div className="comparison-card differences">
-                <div className="card-label">
-                  <span>Where sources differ</span>
-                  <span>Meaningful variations</span>
-                </div>
-                {differences.map((x) => (
-                  <div className="difference" key={x}>
-                    <span className="difference-dot" />
-                    <p>{x}</p>
-                    <button
-                      className={
-                        savedFindings.includes(x)
-                          ? "tiny-save saved"
-                          : "tiny-save"
-                      }
-                      onClick={() =>
-                        setSavedFindings(
-                          savedFindings.includes(x)
-                            ? savedFindings.filter((f) => f !== x)
-                            : [...savedFindings, x],
-                        )
-                      }
-                    >
-                      {savedFindings.includes(x) ? (
-                        <Check size={13} />
-                      ) : (
-                        <Plus size={13} />
-                      )}
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="agreement-card">
-              <div>
-                <span className="eyebrow">What sources agree on</span>
-                <h3>Shared patterns across the research</h3>
-              </div>
-              <div className="agreement-list">
-                {agreements.map((x, i) => (
-                  <button
-                    key={x}
-                    onClick={() =>
-                      setSavedFindings(
-                        savedFindings.includes(x)
-                          ? savedFindings.filter((f) => f !== x)
-                          : [...savedFindings, x],
-                      )
-                    }
-                  >
-                    <span>
-                      <strong>{i + 4} sources</strong>
-                      {x}
-                    </span>
-                    {savedFindings.includes(x) ? (
-                      <Check size={15} />
+                    {analysisData?.commonIngredients.length ? (
+                      analysisData.commonIngredients.map((item) => (
+                        <div className="ingredient" key={item.ingredient}>
+                          <span>{item.ingredient}</span>
+                          <div>
+                            <span className="bar">
+                              <i
+                                style={{
+                                  width: `${Math.max(
+                                    8,
+                                    Math.round(
+                                      (item.sourceCount / maxIngredientCount) *
+                                        100,
+                                    ),
+                                  )}%`,
+                                }}
+                              />
+                            </span>
+                            <strong>
+                              {item.sourceCount}{" "}
+                              {item.sourceCount === 1 ? "source" : "sources"}
+                            </strong>
+                          </div>
+                        </div>
+                      ))
                     ) : (
-                      <Plus size={15} />
+                      <p className="empty-saved">
+                        No consistent ingredient pattern was found across the
+                        sources.
+                      </p>
                     )}
-                  </button>
-                ))}
-              </div>
-            </div>
+                  </div>
+                  <div className="comparison-card differences">
+                    <div className="card-label">
+                      <span>Where sources differ</span>
+                      <span>Meaningful variations</span>
+                    </div>
+                    {analysisData?.differences.length ? (
+                      analysisData.differences.map((item) => {
+                        const findingText = `${item.topic}: ${item.details}${withSourceTitles(item.sourceTitles)}`;
+                        return (
+                          <div
+                            className="difference"
+                            key={findingText}
+                          >
+                            <span className="difference-dot" />
+                            <p>
+                              {item.topic}: {item.details}
+                              {item.sourceTitles.length > 0 && (
+                                <small>
+                                  Sources: {item.sourceTitles.join(", ")}
+                                </small>
+                              )}
+                            </p>
+                            <button
+                              className={
+                                savedFindings.includes(findingText)
+                                  ? "tiny-save saved"
+                                  : "tiny-save"
+                              }
+                              onClick={() => toggleFinding(findingText)}
+                            >
+                              {savedFindings.includes(findingText) ? (
+                                <Check size={13} />
+                              ) : (
+                                <Plus size={13} />
+                              )}
+                            </button>
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <p className="empty-saved">
+                        No meaningful differences surfaced across the sources.
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <div className="agreement-card">
+                  <div>
+                    <span className="eyebrow">What sources agree on</span>
+                    <h3>Shared patterns across the research</h3>
+                  </div>
+                  <div className="agreement-list">
+                    {analysisData?.observations.length ? (
+                      analysisData.observations.map((item, i) => {
+                        const findingText = `${item.observation}${withSourceTitles(item.sourceTitles)}`;
+                        return (
+                          <button
+                            key={`${item.observation}-${i}`}
+                            onClick={() => toggleFinding(findingText)}
+                          >
+                            <span>
+                              <strong>
+                                {item.sourceTitles.length || 1}{" "}
+                                {item.sourceTitles.length === 1
+                                  ? "source"
+                                  : "sources"}
+                              </strong>
+                              {item.observation}
+                            </span>
+                            {savedFindings.includes(findingText) ? (
+                              <Check size={15} />
+                            ) : (
+                              <Plus size={15} />
+                            )}
+                          </button>
+                        );
+                      })
+                    ) : (
+                      <span className="empty-saved">
+                        No consistent pattern found across the sources.
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
           </section>
+
           <section className="section analysis-section">
             <SectionHeader
               eyebrow="04 / Interpretation"
@@ -856,64 +1043,104 @@ export default function Page() {
                 <div className="sparkle-circle">
                   <Sparkles size={18} />
                 </div>
-                <span className="eyebrow">Analyzed with {model}</span>
-                <h3>
-                  {model === "Mistral"
-                    ? "The sources point to a flexible, family-shaped dish."
-                    : model === "Llama"
-                      ? "Mofongo is best understood through its method and setting."
-                      : "Mofongo is a dish with a strong foundation and room for variation."}
-                </h3>
-                <p>
-                  Across the sources, the most consistent thread is the warm,
-                  garlicky plantain base. The differences tell a useful story
-                  about region, family, and the person cooking it.
-                </p>
+                <span className="eyebrow">
+                  Analyzed with {activeAnalysisModel}
+                </span>
+                {analysisBusy ? (
+                  <>
+                    <h3>Analyzing sources…</h3>
+                    <p>
+                      The selected model is reading the research sources. This
+                      can take a moment.
+                    </p>
+                  </>
+                ) : analysisData?.summary ? (
+                  <>
+                    <h3>{summarySplit.headline}</h3>
+                    {summarySplit.rest && <p>{summarySplit.rest}</p>}
+                  </>
+                ) : (
+                  <>
+                    <h3>Analysis isn&apos;t available for this research.</h3>
+                    <p>
+                      {analysisError ||
+                        "The sources above are still useful evidence — you can re-analyze them with the model below."}
+                    </p>
+                  </>
+                )}
               </div>
               <div className="analysis-details">
                 <div>
-                  <span className="eyebrow">Important considerations</span>
-                  <ul>
-                    <li>
-                      Source context varies between traditional, home-style, and
-                      contemporary presentations.
-                    </li>
-                    <li>
-                      Not every source includes pork, so avoid treating it as
-                      universal.
-                    </li>
-                    <li>
-                      Look closely at the serving style when choosing visual
-                      references.
-                    </li>
-                  </ul>
+                  <span className="eyebrow">Techniques across sources</span>
+                  {analysisData?.techniques.length ? (
+                    <ul>
+                      {analysisData.techniques.map((item, i) => (
+                        <li key={`${item.technique}-${i}`}>
+                          {item.technique}
+                          {item.details ? ` — ${item.details}` : ""}
+                          {item.sourceTitles.length > 0 && (
+                            <small className="technique-sources">
+                              {" "}
+                              Sources: {item.sourceTitles.join(", ")}
+                            </small>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="empty-saved">
+                      No techniques were described consistently across the
+                      sources.
+                    </p>
+                  )}
                 </div>
                 <div>
-                  <span className="eyebrow">Questions worth checking</span>
+                  <span className="eyebrow">What this research contains</span>
                   <ul>
-                    <li>Are there regional differences in preparation?</li>
-                    <li>How does the pilón change the final texture?</li>
+                    <li>{sources.length} web sources reviewed</li>
+                    <li>
+                      {
+                        sources.filter((s) => s.contentType === "recipe")
+                          .length
+                      }{" "}
+                      with structured recipe data
+                    </li>
+                    <li>
+                      {
+                        sources.filter(
+                          (s) =>
+                            s.contentType === "article" ||
+                            s.contentType === "social",
+                        ).length
+                      }{" "}
+                      articles or social posts used as context
+                    </li>
+                    <li>{visuals.length} visual references found</li>
                   </ul>
                 </div>
               </div>
             </div>
             <div className="reanalyze">
               <span>
-                Research model <strong>{model}</strong>
+                Research model <strong>{modelLabel(model)}</strong>
               </span>
-              <button onClick={runReanalysis} disabled={reanalyzing}>
+              <button
+                onClick={runReanalysis}
+                disabled={reanalyzing || !sources.length}
+              >
                 {reanalyzing ? (
                   <>
                     <span className="spinner dark" /> Re-analyzing sources...
                   </>
                 ) : (
                   <>
-                    Re-analyze with {model} <ArrowRight size={14} />
+                    Re-analyze with {modelLabel(model)} <ArrowRight size={14} />
                   </>
                 )}
               </button>
             </div>
           </section>
+
           <section className="section notes-section">
             <SectionHeader
               eyebrow="05 / Your perspective"
@@ -930,6 +1157,7 @@ export default function Page() {
               research analysis.
             </div>
           </section>
+
           <section className="brief-section">
             <div className="brief-heading">
               <div>
@@ -961,23 +1189,22 @@ export default function Page() {
                 <span>Research</span>
                 <h3>{dish}</h3>
                 <p>{context}</p>
-                <small>Research model · {model}</small>
+                <small>Research model · {modelLabel(model)}</small>
               </div>
               <div className="brief-columns">
                 <div>
                   <span className="eyebrow">Key findings</span>
                   <p>
-                    Green plantains and garlic appear as the clearest common
-                    thread. Sources vary meaningfully in protein, cooking
-                    method, and serving style.
+                    {analysisData?.summary ||
+                      "Save findings from the comparison above to collect them here."}
                   </p>
                 </div>
                 <div>
-                  <span className="eyebrow">Recipe findings</span>
+                  <span className="eyebrow">Saved sources</span>
                   <p>
-                    {savedRecipes.length
-                      ? `${savedRecipes.length} recipe source${savedRecipes.length > 1 ? "s" : ""} saved for closer review.`
-                      : "Save a recipe source to see it collected here."}
+                    {savedSources.length
+                      ? `${savedSources.length} source${savedSources.length > 1 ? "s" : ""} saved for closer review, with links back to the originals.`
+                      : "Save a source to see it collected here."}
                   </p>
                 </div>
               </div>
@@ -988,7 +1215,11 @@ export default function Page() {
                   </span>
                   <div className="saved-thumbs">
                     {savedVisuals.map((i) => (
-                      <img key={i} src={visuals[i][3]} alt={visuals[i][0]} />
+                      <img
+                        key={i}
+                        src={visuals[i]?.imageUrl}
+                        alt={visuals[i]?.title || ""}
+                      />
                     ))}
                     {!savedVisuals.length && (
                       <span className="empty-saved">
@@ -1018,7 +1249,8 @@ export default function Page() {
           </section>
         </main>
       )}
-      {briefOpen && view === "research" && (
+
+      {briefOpen && view === "research" && researchData && (
         <aside className="brief-drawer">
           <button onClick={() => setBriefOpen(false)} aria-label="Close brief">
             <X size={18} />
@@ -1031,21 +1263,21 @@ export default function Page() {
           <div className="drawer-list">
             {savedVisuals.map((i) => (
               <div key={i}>
-                <img src={visuals[i][3]} alt="" />
+                <img src={visuals[i]?.imageUrl} alt="" />
                 <span>
-                  {visuals[i][0]}
+                  {visuals[i]?.title}
                   <small>Visual reference</small>
                 </span>
               </div>
             ))}
-            {savedRecipes.map((i) => (
+            {savedSources.map((i) => (
               <div key={i}>
                 <span className="drawer-icon">
-                  <NotebookPen size={16} />
+                  <Search size={16} />
                 </span>
                 <span>
-                  {recipes[i].title}
-                  <small>Recipe source</small>
+                  {sources[i]?.title || "Untitled source"}
+                  <small>Research source</small>
                 </span>
               </div>
             ))}
@@ -1069,27 +1301,34 @@ export default function Page() {
           </div>
         </aside>
       )}
-      {selectedVisual !== null && (
+
+      {selectedVisual !== null && visuals[selectedVisual] && (
         <Modal onClose={() => setSelectedVisual(null)}>
           <img
             className="modal-visual"
-            src={visuals[selectedVisual]?.[3]}
-            alt={visuals[selectedVisual]?.[0]}
+            src={visuals[selectedVisual].originalUrl || visuals[selectedVisual].imageUrl}
+            alt={visuals[selectedVisual].title}
           />
-
           <div className="modal-content">
-            <span className="eyebrow">
-              {visuals[selectedVisual][2]} · Source context
-            </span>
-            <h2>{visuals[selectedVisual][0]}</h2>
-            <p className="modal-source">{visuals[selectedVisual][1]}</p>
+            <span className="eyebrow">Google Images · Visual reference</span>
+            <h2>{visuals[selectedVisual].title}</h2>
+            <p className="modal-source">{visuals[selectedVisual].source}</p>
             <div className="modal-rule" />
-            <span className="eyebrow">Why this was surfaced</span>
-            <p>{visuals[selectedVisual][4]}</p>
+            <span className="eyebrow">Where this image came from</span>
+            <p>
+              Found via Google Images from {visuals[selectedVisual].source}.
+            </p>
             <div className="modal-actions">
-              <button className="secondary-button">
-                <ExternalLink size={15} /> View original source
-              </button>
+              {visuals[selectedVisual].sourceUrl && (
+                <a
+                  className="secondary-button"
+                  href={visuals[selectedVisual].sourceUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <ExternalLink size={15} /> View original source
+                </a>
+              )}
               <button
                 className="primary-button"
                 onClick={() =>
@@ -1109,34 +1348,91 @@ export default function Page() {
           </div>
         </Modal>
       )}
-      {selectedRecipe !== null && (
-        <Modal onClose={() => setSelectedRecipe(null)}>
+
+      {selectedSource !== null && sources[selectedSource] && (
+        <Modal onClose={() => setSelectedSource(null)}>
           <div className="recipe-detail">
-            <span className="eyebrow">{recipes[selectedRecipe].type}</span>
-            <h2>{recipes[selectedRecipe].title}</h2>
-            <p className="modal-source">{recipes[selectedRecipe].source}</p>
+            <span className="eyebrow">
+              {contentTypeLabel(sources[selectedSource].contentType)}
+            </span>
+            <h2>{sources[selectedSource].title || "Untitled source"}</h2>
+            <p className="modal-source">
+              {sources[selectedSource].source || "Web source"}
+            </p>
+            {(sources[selectedSource].cookTime ||
+              sources[selectedSource].yield) && (
+              <>
+                <div className="modal-rule" />
+                <span className="eyebrow">Details from the source</span>
+                <p>
+                  {[
+                    sources[selectedSource].cookTime,
+                    sources[selectedSource].yield,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </p>
+              </>
+            )}
+            {sources[selectedSource].ingredients?.length ? (
+              <>
+                <div className="modal-rule" />
+                <span className="eyebrow">Ingredients</span>
+                <div className="ingredient-pills">
+                  {sources[selectedSource].ingredients.map((x) => (
+                    <span key={x}>{x}</span>
+                  ))}
+                </div>
+              </>
+            ) : null}
+            {sources[selectedSource].instructions?.length ? (
+              <>
+                <span className="eyebrow">Preparation</span>
+                {sources[selectedSource].instructions.map((step, i) => (
+                  <p key={i}>
+                    {i + 1}. {step}
+                  </p>
+                ))}
+              </>
+            ) : null}
             <div className="modal-rule" />
-            <span className="eyebrow">Ingredients</span>
-            <div className="ingredient-pills">
-              {recipes[selectedRecipe].ingredients.map((x) => (
-                <span key={x}>{x}</span>
-              ))}
-            </div>
-            <span className="eyebrow">Preparation</span>
-            <p>{recipes[selectedRecipe].prep}</p>
-            <span className="eyebrow">Source context</span>
-            <p>{recipes[selectedRecipe].desc}</p>
+            <span className="eyebrow">
+              {sources[selectedSource].content
+                ? "From the page"
+                : sources[selectedSource].snippet
+                  ? "Search snippet"
+                  : "About this source"}
+            </span>
+            <p>
+              {sources[selectedSource].content
+                ? `${sources[selectedSource].content.slice(0, 700)}${sources[selectedSource].content.length > 700 ? "…" : ""}`
+                : sources[selectedSource].snippet
+                  ? sources[selectedSource].snippet
+                  : "Only the search result was available for this source — the page could not be read."}
+            </p>
             <div className="modal-actions">
-              <button className="secondary-button">
-                <ExternalLink size={15} /> View original source
-              </button>
+              {sources[selectedSource].url && (
+                <a
+                  className="secondary-button"
+                  href={sources[selectedSource].url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <ExternalLink size={15} /> View original source
+                </a>
+              )}
               <button
                 className="primary-button"
                 onClick={() =>
-                  toggle(savedRecipes, setSavedRecipes, selectedRecipe)
+                  toggle(savedSources, setSavedSources, selectedSource)
                 }
               >
-                {savedRecipes.includes(selectedRecipe)
+                {savedSources.includes(selectedSource) ? (
+                  <Check size={15} />
+                ) : (
+                  <Plus size={15} />
+                )}
+                {savedSources.includes(selectedSource)
                   ? "Saved to brief"
                   : "Save to brief"}
               </button>
@@ -1144,6 +1440,7 @@ export default function Page() {
           </div>
         </Modal>
       )}
+
       {clearOpen && (
         <div className="confirm-overlay">
           <div className="confirm-box">
@@ -1170,6 +1467,8 @@ export default function Page() {
   );
 }
 
+/* ------------------------------- components ------------------------------- */
+
 function SectionHeader({
   eyebrow,
   title,
@@ -1189,6 +1488,7 @@ function SectionHeader({
     </div>
   );
 }
+
 function Modal({
   children,
   onClose,
@@ -1207,31 +1507,14 @@ function Modal({
     </div>
   );
 }
+
 function SavedResearch({
+  sessions,
   onOpen,
 }: {
-  onOpen: (dish: string, context: string) => void;
+  sessions: SavedSession[];
+  onOpen: (session: SavedSession) => void;
 }) {
-  const items = [
-    [
-      "Mofongo",
-      "Traditional Puerto Rican",
-      "18 visuals · 6 recipes",
-      "https://images.unsplash.com/photo-1515003197210-e0cd71810b5f?auto=format&fit=crop&w=500&q=80",
-    ],
-    [
-      "Jollof Rice",
-      "Nigerian home-style",
-      "15 visuals · 5 recipes",
-      "https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=500&q=80",
-    ],
-    [
-      "Tres Leches",
-      "Traditional Mexican",
-      "14 visuals · 4 recipes",
-      "https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=500&q=80",
-    ],
-  ];
   return (
     <main className="saved-page">
       <div className="saved-intro">
@@ -1243,24 +1526,45 @@ function SavedResearch({
           Keep your discoveries close for the next time inspiration strikes.
         </p>
       </div>
-      <div className="saved-grid">
-        {items.map(([d, c, m, img]) => (
-          <button
-            className="saved-session"
-            key={d}
-            onClick={() => onOpen(d, c)}
-          >
-            <img src={img} alt="" />
-            <div>
-              <span className="eyebrow">Research session</span>
-              <h2>{d}</h2>
-              <p>{c}</p>
-              <small>{m}</small>
-            </div>
-            <ArrowRight size={17} />
-          </button>
-        ))}
-      </div>
+      {sessions.length ? (
+        <div className="saved-grid">
+          {sessions.map((session) => (
+            <button
+              className="saved-session"
+              key={session.id}
+              onClick={() => onOpen(session)}
+            >
+              {session.images?.[0]?.thumbnail ||
+              session.images?.[0]?.original ? (
+                <img
+                  src={session.images[0].thumbnail || session.images[0].original}
+                  alt=""
+                />
+              ) : (
+                <div className="saved-session-thumb" />
+              )}
+              <div>
+                <span className="eyebrow">Research session</span>
+                <h2>{session.dish}</h2>
+                <p>{session.context || "No context"}</p>
+                <small>
+                  {session.images?.length ?? 0} visuals ·{" "}
+                  {session.sources?.length ?? 0} sources
+                  {session.savedAt
+                    ? ` · saved ${new Date(session.savedAt).toLocaleDateString()}`
+                    : ""}
+                </small>
+              </div>
+              <ArrowRight size={17} />
+            </button>
+          ))}
+        </div>
+      ) : (
+        <div className="saved-empty">
+          No saved research yet. Run a search and use “Save research” in the
+          workspace to keep a session here.
+        </div>
+      )}
     </main>
   );
 }
