@@ -3,8 +3,9 @@ import type { Metadata, Viewport } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Food Research — Research without the rabbit hole',
-  description: 'A calm research workspace for food creators to find recipes, visual references, and context.',
+  title: 'Gastronomical — a research studio for food creators',
+  description:
+    'Gather photographs, recipes and local sources into one research pack, then turn it into a carousel.',
   generator: 'v0.app',
   icons: {
     icon: [

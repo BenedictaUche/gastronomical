@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 
+import { openRouterChat, openRouterErrorMessage } from "@/lib/openrouter"
+
 // Only models that are actually wired up for analysis. The frontend marks
 // everything else as unavailable so it cannot be selected.
 const DEFAULT_MODEL = "qwen/qwen3.8-27b:free"
@@ -205,51 +207,40 @@ Return JSON with exactly this structure:
 }
 `
 
-    const response = await fetch(
-      "https://openrouter.ai/api/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-          "HTTP-Referer": "http://localhost:3000",
-          "X-Title": "Gastronomical",
+    const result = await openRouterChat({
+      apiKey,
+      payload: {
+        model,
+        models: [model],
+        messages: [
+          {
+            role: "user",
+            content: prompt,
+          },
+        ],
+        response_format: {
+          type: "json_object",
         },
-        body: JSON.stringify({
-          model,
-          models: [model],
-          messages: [
-            {
-              role: "user",
-              content: prompt,
-            },
-          ],
-          response_format: {
-            type: "json_object",
-          },
-          // This model is a reasoning model: without disabling reasoning it
-          // spends minutes thinking before producing the JSON.
-          reasoning: {
-            enabled: false,
-          },
-        }),
-        signal: AbortSignal.timeout(180000),
-      }
-    )
+        // This model is a reasoning model: without disabling reasoning it
+        // spends minutes thinking before producing the JSON.
+        reasoning: {
+          enabled: false,
+        },
+      },
+    })
 
-    const data = await response.json()
-
-    if (!response.ok) {
-      console.error("OpenRouter error:", data?.error?.message || data)
+    if (!result.ok) {
+      console.error("OpenRouter error:", openRouterErrorMessage(result))
 
       return NextResponse.json(
         {
-          error:
-            data?.error?.message || "OpenRouter request failed.",
+          error: openRouterErrorMessage(result),
         },
         { status: 502 }
       )
     }
+
+    const data = result.data
 
     const content = data?.choices?.[0]?.message?.content
 
