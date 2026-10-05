@@ -7,7 +7,6 @@ import { RecipeCards } from "./RecipeCards";
 import { Comparison } from "./Comparison";
 import { VisualGallery } from "./VisualGallery";
 import { SourceLibrary } from "./SourceLibrary";
-import { NotesBoard } from "./NotesBoard";
 import type {
   AnalysisData,
   ResearchImage,
@@ -21,7 +20,6 @@ type WorkspaceProps = {
   dish: string;
   context: string;
   kind: string;
-  model: string;
   images: ResearchImage[];
   sources: ResearchSource[];
   warning?: string | null;
@@ -40,8 +38,6 @@ type WorkspaceProps = {
   onSetNote: (index: number, note: ShotNote | undefined) => void;
   onToggleSource: (index: number) => void;
   onToggleFinding: (finding: SavedFinding) => void;
-  onAddNote: (note: string) => void;
-  onRemoveNote: (note: string) => void;
 };
 
 export function Workspace({
@@ -66,8 +62,6 @@ export function Workspace({
   onSetNote,
   onToggleSource,
   onToggleFinding,
-  onAddNote,
-  onRemoveNote,
 }: WorkspaceProps) {
   const mainRef = useRef<HTMLElement>(null);
   const [sourcesOpen, setSourcesOpen] = useState(false);
@@ -109,7 +103,6 @@ export function Workspace({
           { id: "recipes-heading", label: "Recipes" },
           { id: "compare-heading", label: "Differences" },
           { id: "visuals-heading", label: "Images" },
-          { id: "notes-heading", label: "Notes" },
         ].map((jump) => (
           <button key={jump.id} onClick={() => jumpTo(jump.id)}>
             {jump.label}
@@ -144,7 +137,7 @@ export function Workspace({
       <div className="mid-cta">
         <p>Images and recipes are ready to become a carousel.</p>
         <button className="button button-primary button-big" onClick={onPlan}>
-           Create my carousel
+          Create my carousel
         </button>
       </div>
 
@@ -170,8 +163,6 @@ export function Workspace({
           </div>
         )}
       </section>
-
-      {/* <NotesBoard notes={pack.notes} onAdd={onAddNote} onRemove={onRemoveNote} /> */}
     </main>
   );
 }

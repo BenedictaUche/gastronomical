@@ -155,7 +155,7 @@ npm install
 
 Create a .env.local file:
 
-SERPAPI_API_KEY=your_serpapi_key
+SERPAPI_KEY=your_serpapi_key
 OPENROUTER_API_KEY=your_openrouter_key
 
 Never commit your API keys to the repository.

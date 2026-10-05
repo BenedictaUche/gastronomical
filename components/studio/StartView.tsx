@@ -16,7 +16,6 @@ type StartViewProps = {
   context: string;
   kind: string;
   extra: string;
-  showExtra: boolean;
   model: string;
   loading: boolean;
   phase: "searching" | "analyzing" | null;
@@ -26,7 +25,6 @@ type StartViewProps = {
   onContextChange: (value: string) => void;
   onKindChange: (value: string) => void;
   onExtraChange: (value: string) => void;
-  onToggleExtra: () => void;
   onModelChange: (value: string) => void;
   onSubmit: () => void;
   onOpenSession: (session: SavedSession) => void;
@@ -49,7 +47,6 @@ export function StartView({
   context,
   kind,
   extra,
-  showExtra,
   model,
   loading,
   phase,
@@ -59,7 +56,6 @@ export function StartView({
   onContextChange,
   onKindChange,
   onExtraChange,
-  onToggleExtra,
   onModelChange,
   onSubmit,
   onOpenSession,
@@ -70,7 +66,6 @@ export function StartView({
   return (
     <main className="start-page">
       <div className="start-hero">
-        {/* <span className="kicker">Research less. Create faster.</span> */}
         <h1>
           What are you making
           <em> content about?</em>

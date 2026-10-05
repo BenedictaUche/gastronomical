@@ -1,6 +1,6 @@
 "use client";
 
-import { Bookmark, Check, ChevronRight, RefreshCw, Sparkles } from "lucide-react";
+import { Bookmark, Check, ChevronRight, RefreshCw } from "lucide-react";
 import { packSize } from "@/lib/studio";
 import type { ResearchPack } from "@/lib/studio";
 
@@ -62,7 +62,7 @@ export function ResearchOverview({
 
         <div className="overview-actions overview-actions-main">
           <button className="button button-primary button-big" onClick={onPlan}>
-        Create my carousel
+            Create my carousel
             <ChevronRight size={16} />
           </button>
 

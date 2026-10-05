@@ -236,12 +236,6 @@ Return JSON with exactly this structure:
     //                                    minutes thinking before emitting JSON
     //   max_tokens                      — bounded output so one request cannot
     //                                    hold the route open for the full timeout
-    console.info(
-      `[analyze] model=${model} requested=${requestedModel || "(none)"} allowed=${[
-        ...ALLOWED_MODELS,
-      ].join(",")} sources=${promptSources.length}`
-    )
-
     const result = await openRouterChat({
       apiKey,
       payload: {

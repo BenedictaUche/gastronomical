@@ -253,8 +253,11 @@ function describeSerpFailure(outcome: SerpOutcome): string {
 }
 
 // Operation, elapsed time, HTTP status, timeout flag, attempt — and never the
-// key, which only ever exists in the request URL.
+// key, which only ever exists in the request URL. Successful searches are not
+// logged; only failures are.
 function logSerpOutcome(outcome: SerpOutcome, attempt: number) {
+  if (outcome.ok) return
+
   const summary = {
     operation: outcome.operation,
     engine: outcome.engine,
@@ -263,12 +266,7 @@ function logSerpOutcome(outcome: SerpOutcome, attempt: number) {
     elapsedMs: outcome.elapsedMs,
     status: outcome.status,
     timedOut: outcome.timedOut,
-    reason: outcome.ok ? "ok" : outcome.reason,
-  }
-
-  if (outcome.ok) {
-    console.info(`[serpapi] ${JSON.stringify(summary)}`)
-    return
+    reason: outcome.reason,
   }
 
   console.error(`[serpapi] ${JSON.stringify(summary)} ${outcome.message ?? ""}`.trimEnd())

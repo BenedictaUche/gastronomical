@@ -51,7 +51,6 @@ type CarouselPlannerProps = {
   context: string;
   pack: ResearchPack;
   images: ResearchImage[];
-  model: string;
   title: string;
   slides: CarouselSlide[];
   type: string;
@@ -76,7 +75,6 @@ export function CarouselPlanner({
   context,
   pack,
   images,
-  model,
   title,
   slides,
   type,
@@ -285,7 +283,6 @@ export function CarouselPlanner({
     <main className="plan-page">
       <header className="plan-head">
         <div>
-          {/* <span className="eyebrow">Ready to post</span> */}
           <h1>Create my carousel</h1>
           <p>
             Written from the recipes and sources retrieved for{" "}
@@ -355,7 +352,7 @@ export function CarouselPlanner({
               </>
             ) : (
               <>
-                <Sparkles size={16} /> Create my carousel
+             Create my carousel
               </>
             )}
           </button>
@@ -575,12 +572,14 @@ export function CarouselPlanner({
                           <button
                             key={option.id}
                             className={slide.focus === option.id ? "focus-cell focus-cell-on" : "focus-cell"}
-onClick={() =>
-                          update(slide.id, {
-                            focus: option.id as ImageFocus,
-                            anchor: slide.anchorAuto ? suggestAnchor(option.id as ImageFocus) : slide.anchor,
-                          })
-                        }
+                            onClick={() =>
+                              update(slide.id, {
+                                focus: option.id as ImageFocus,
+                                anchor: slide.anchorAuto
+                                  ? suggestAnchor(option.id as ImageFocus)
+                                  : slide.anchor,
+                              })
+                            }
                             title={option.label}
                             aria-pressed={slide.focus === option.id}
                             aria-label={option.label}
@@ -790,7 +789,8 @@ onClick={() =>
             })}
           </div>
 
-          <button className="add-slide" onClick={addSlide}> Add a slide
+          <button className="add-slide" onClick={addSlide}>
+            Add a slide
           </button>
         </>
       )}

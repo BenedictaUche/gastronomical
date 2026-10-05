@@ -49,7 +49,6 @@ export default function Page() {
   const [context, setContext] = useState("");
   const [kind, setKind] = useState<string>(DEFAULT_CONTENT_TYPE);
   const [extra, setExtra] = useState("");
-  const [showExtra, setShowExtra] = useState(false);
   const [model, setModel] = useState(DEFAULT_MODEL_ID);
 
   /* live research */
@@ -236,11 +235,6 @@ export default function Page() {
         ? current.findings.filter((item) => item.id !== finding.id)
         : [...current.findings, finding],
     }));
-
-  const addNote = (note: string) =>
-    setPack((current) =>
-      current.notes.includes(note) ? current : { ...current, notes: [...current.notes, note] },
-    );
 
   const removeNote = (note: string) =>
     setPack((current) => ({ ...current, notes: current.notes.filter((item) => item !== note) }));
@@ -515,7 +509,6 @@ export default function Page() {
           context={context}
           kind={kind}
           extra={extra}
-          showExtra={showExtra}
           model={model}
           loading={loading}
           phase={phase}
@@ -525,7 +518,6 @@ export default function Page() {
           onContextChange={setContext}
           onKindChange={setKind}
           onExtraChange={setExtra}
-          onToggleExtra={() => setShowExtra((value) => !value)}
           onModelChange={setModel}
           onSubmit={startResearch}
           onOpenSession={openSession}
@@ -537,7 +529,6 @@ export default function Page() {
           dish={dish}
           context={context}
           kind={kind}
-          model={model}
           images={images}
           sources={sources}
           warning={researchWarning}
@@ -556,8 +547,6 @@ export default function Page() {
           onSetNote={setVisualNote}
           onToggleSource={toggleSource}
           onToggleFinding={toggleFinding}
-          onAddNote={addNote}
-          onRemoveNote={removeNote}
         />
       )}
 
@@ -577,7 +566,6 @@ export default function Page() {
           context={context}
           pack={pack}
           images={images}
-          model={model}
           title={carouselTitle}
           slides={slides}
           type={carouselType}
