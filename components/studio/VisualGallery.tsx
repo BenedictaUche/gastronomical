@@ -16,6 +16,7 @@ type VisualGalleryProps = {
   dish: string;
   images: ResearchImage[];
   pack: ResearchPack;
+  notice?: string | null;
   onToggleSave: (index: number) => void;
   onSetNote: (index: number, note: ShotNote | undefined) => void;
 };
@@ -30,6 +31,7 @@ export function VisualGallery({
   dish,
   images,
   pack,
+  notice,
   onToggleSave,
   onSetNote,
 }: VisualGalleryProps) {
@@ -59,16 +61,16 @@ export function VisualGallery({
     <section className="section section-visuals" aria-labelledby="visuals-heading">
       <div className="section-head">
         <div>
-          <span className="eyebrow">Visual discovery</span>
-          <h2 id="visuals-heading">Photograph references</h2>
+          <span className="eyebrow">Visuals</span>
+          <h2 id="visuals-heading">Images for your carousel</h2>
           <p>
-            Everything Google Images returned for this search. Open one to look
-            at it properly, keep the ones worth returning to, and label them with
-            your own read of what each one shows.
+            Pulled from this search. Keep the ones you want in the carousel —
+            each stays labelled with where it came from, and the studio never
+            claims an image is authentic on its own.
           </p>
         </div>
         <p className="section-tally">
-          {images.length} found · {pack.visuals.length} kept
+          {images.length} found · {pack.visuals.length} in carousel
         </p>
       </div>
 
@@ -85,7 +87,7 @@ export function VisualGallery({
           onClick={() => setFilter("saved")}
           aria-pressed={filter === "saved"}
         >
-          Kept ({pack.visuals.length})
+          In carousel ({pack.visuals.length})
         </button>
         {notesInUse.map((note) => (
           <button
@@ -102,7 +104,8 @@ export function VisualGallery({
       {visible.length === 0 ? (
         <p className="empty-state">
           {images.length === 0
-            ? "No images came back for this search. Adding a regional context usually helps — try a new research run."
+            ? notice ??
+              "No images came back for this search. Adding a regional context usually helps — try a new research run."
             : "Nothing matches this filter yet. Keep an image or give it one of your own labels and it will appear here."}
         </p>
       ) : (
@@ -143,7 +146,7 @@ export function VisualGallery({
                       aria-pressed={kept}
                     >
                       {kept ? <Check size={13} /> : <Plus size={13} />}
-                      {kept ? "In pack" : "Keep"}
+                      {kept ? "In carousel" : "Use in carousel"}
                     </button>
                     {note && <span className="shot-tag">{shotNoteLabel(note)}</span>}
                     {pageUrl(image) && (
@@ -154,7 +157,7 @@ export function VisualGallery({
                         rel="noopener noreferrer"
                       >
                         <ExternalLink size={13} />
-                        Source
+                        View source
                       </a>
                     )}
                   </div>
@@ -188,7 +191,7 @@ export function VisualGallery({
                   onClick={() => onToggleSave(inspecting)}
                 >
                   {isImageSaved(pack, inspecting) ? <Check size={15} /> : <Plus size={15} />}
-                  {isImageSaved(pack, inspecting) ? "Kept in pack" : "Keep in pack"}
+                  {isImageSaved(pack, inspecting) ? "In carousel" : "Use in carousel"}
                 </button>
                 {pageUrl(active) && (
                   <a

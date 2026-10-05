@@ -1,22 +1,20 @@
 "use client";
 
-import { Bookmark, Check, RefreshCw, Sparkles } from "lucide-react";
-import { modelLabel, packSize, sourceType } from "@/lib/studio";
-import type { ResearchPack, ResearchSource } from "@/lib/studio";
+import { Bookmark, Check, ChevronRight, RefreshCw, Sparkles } from "lucide-react";
+import { packSize } from "@/lib/studio";
+import type { ResearchPack } from "@/lib/studio";
 
 type ResearchOverviewProps = {
   dish: string;
   context: string;
   kind: string;
-  model: string;
   summary: string;
-  imageCount: number;
-  sources: ResearchSource[];
   analysisBusy: boolean;
   analysisError: string | null;
   reanalyzing: boolean;
   pack: ResearchPack;
   savedSession: boolean;
+  recipeCount: number;
   onReanalyze: () => void;
   onSaveSession: () => void;
   onOpenPack: () => void;
@@ -27,103 +25,78 @@ export function ResearchOverview({
   dish,
   context,
   kind,
-  model,
   summary,
-  imageCount,
-  sources,
   analysisBusy,
   analysisError,
   reanalyzing,
   pack,
   savedSession,
+  recipeCount,
   onReanalyze,
   onSaveSession,
   onOpenPack,
   onPlan,
 }: ResearchOverviewProps) {
-  const recipeCount = sources.filter((source) => sourceType(source) === "recipe").length;
-  const contextCount = sources.filter((source) => sourceType(source) !== "recipe").length;
   const count = packSize(pack);
 
   return (
-    <section className="overview" aria-labelledby="overview-heading">
+    <section className="overview overview-slim" aria-labelledby="overview-heading">
       <div className="overview-main">
-        {/* <span className="eyebrow">Researching</span> */}
-        <h1 id="overview-heading">{dish}</h1>
-        <p className="overview-context">{context || "No regional or cultural focus given"}</p>
-
         <div className="overview-meta">
           <span className="meta-chip">{kind}</span>
-          {/* <span className="meta-chip meta-chip-quiet">
-            <Sparkles size={12} /> {modelLabel(model)}
-          </span> */}
+          {context && <span className="meta-chip meta-chip-quiet">{context}</span>}
         </div>
 
-        <div className="overview-counts">
-          <div className="count">
-            <strong>{imageCount}</strong>
-            <span>visual references</span>
-          </div>
-          <div className="count">
-            <strong>{sources.length}</strong>
-            <span>sources found</span>
-          </div>
-          <div className="count">
-            <strong>{recipeCount}</strong>
-            <span>with recipe data</span>
-          </div>
-          <div className="count">
-            <strong>{contextCount}</strong>
-            <span>articles & posts</span>
-          </div>
-        </div>
-      </div>
+        <h1 id="overview-heading">{dish}</h1>
 
-      <div className="overview-side">
-        <span className="eyebrow">Research summary</span>
         {analysisBusy ? (
           <p className="overview-summary">
-            <span className="spinner spinner-dark" aria-hidden="true" /> Reading the collected
+            <span className="spinner spinner-dark" aria-hidden="true" /> Reading the
             sources…
           </p>
         ) : summary ? (
           <p className="overview-summary">{summary}</p>
-        ) : (
-          <p className="overview-summary overview-summary-muted">
-            {analysisError ??
-              "No synthesis yet. The sources below are still usable evidence on their own."}
-          </p>
-        )}
+        ) : analysisError ? (
+          <p className="overview-summary overview-summary-muted">{analysisError}</p>
+        ) : null}
 
-        <div className="overview-actions">
-          <button className="button button-primary" onClick={onOpenPack}>
-            Research pack
-            <span className="button-count">{count}</span>
+        <div className="overview-actions overview-actions-main">
+          <button className="button button-primary button-big" onClick={onPlan}>
+        Create my carousel
+            <ChevronRight size={16} />
           </button>
-          <button className="button button-quiet" onClick={onPlan}>
-            Plan a carousel
-          </button>
+
           <button
             className={savedSession ? "button button-quiet button-quiet-done" : "button button-quiet"}
             onClick={onSaveSession}
             disabled={savedSession}
           >
             {savedSession ? <Check size={14} /> : <Bookmark size={14} />}
-            {savedSession ? "Session saved" : "Save session"}
+            {savedSession ? "Project saved" : "Save project"}
           </button>
-          <button
-            className="button button-quiet"
-            onClick={onReanalyze}
-            disabled={reanalyzing || !sources.length}
-          >
-            {reanalyzing ? (
-              <span className="spinner spinner-dark" aria-hidden="true" />
-            ) : (
-              <RefreshCw size={14} />
-            )}
-            Re-analyse
+
+          <button className="button button-quiet" onClick={onOpenPack}>
+            My content pack
+            <span className="button-count">{count}</span>
           </button>
+
+          {analysisError && (
+            <button className="button button-quiet" onClick={onReanalyze} disabled={reanalyzing}>
+              {reanalyzing ? (
+                <span className="spinner spinner-dark" aria-hidden="true" />
+              ) : (
+                <RefreshCw size={14} />
+              )}
+              Try the summary again
+            </button>
+          )}
         </div>
+
+        <p className="overview-footnote">
+          {recipeCount > 0
+            ? `${recipeCount} recipe${recipeCount === 1 ? "" : "s"} found in the sources below.`
+            : "No structured recipes yet — the sources below may still describe how it is made."}
+        </p>
       </div>
     </section>
   );

@@ -1,11 +1,20 @@
 import { NextRequest, NextResponse } from "next/server"
 
-import { openRouterChat, openRouterErrorMessage } from "@/lib/openrouter"
+import {
+  OPENROUTER_MAX_TOKENS,
+  openRouterChat,
+  openRouterDiagnostics,
+  openRouterErrorMessage,
+} from "@/lib/openrouter"
+import { DEFAULT_MODEL_ID, MODELS } from "@/lib/studio"
 
-// Only models that are actually wired up for analysis. The frontend marks
-// everything else as unavailable so it cannot be selected.
-const DEFAULT_MODEL = "qwen/qwen3.8-27b:free"
-const ALLOWED_MODELS = new Set([DEFAULT_MODEL])
+// The model lives in @/lib/studio so the selector, the start screen and both
+// OpenRouter routes read from one list. Swapping the model is a one-line edit
+// there plus marking the entry `available` — nothing below hardcodes an id.
+const DEFAULT_MODEL = DEFAULT_MODEL_ID
+const ALLOWED_MODELS = new Set(
+  MODELS.filter((model) => model.available && model.id.includes("/")).map((model) => model.id)
+)
 
 const MAX_PROMPT_SOURCES = 10
 const MAX_CONTENT_CHARS = 2500
@@ -143,7 +152,9 @@ export async function POST(request: NextRequest) {
       contentType: asString(source.contentType) || "other",
       ingredients: asStringArray(source.ingredients).slice(0, 40),
       instructions: asStringArray(source.instructions).slice(0, 30),
+      prepTime: asString(source.prepTime),
       cookTime: asString(source.cookTime),
+      author: asString(source.author),
       yield: asString(source.yield),
     }))
 
@@ -168,6 +179,11 @@ IMPORTANT RULES:
 - Search snippets are evidence, but they are not equivalent to a full recipe.
 - Never represent a social post or an article as a structured recipe unless that source actually provides recipe information (ingredients and/or instructions).
 - If there is not enough evidence for a section, return an empty array for it. Do not manufacture findings just to fill the UI.
+- NEVER invent ingredient measurements, serving sizes/yields, cooking times, or recipe instructions. Quote only values literally present in the supplied sources.
+- If a measurement, yield, or time is not stated by the sources, mark it explicitly (e.g. "Measurement not specified by source." / "Yield not specified by source."). Never fill the gap from your own knowledge.
+- Never expand a snippet into a full recipe. A snippet stays a snippet.
+- Never present unsupported cultural claims as facts. Attribute such claims to the source that made them.
+- Keep "summary" short and readable: 2-3 sentences maximum, written for a food creator, not a research report.
 
 Research sources:
 
@@ -207,11 +223,29 @@ Return JSON with exactly this structure:
 }
 `
 
+    // Request shape, verified against OpenRouter's chat completions API:
+    //   Authorization: Bearer <key>      — set in openRouterChat
+    //   Content-Type: application/json   — set in openRouterChat
+    //   model                           — resolved from the requested id above,
+    //                                    falling back to the default when the
+    //                                    selector offers something not wired up
+    //   messages                        — a single user turn carrying the prompt
+    //   response_format                 — json_object, so the reply parses
+    //   reasoning                       — must stay disabled: this is a
+    //                                    reasoning model and it otherwise spends
+    //                                    minutes thinking before emitting JSON
+    //   max_tokens                      — bounded output so one request cannot
+    //                                    hold the route open for the full timeout
+    console.info(
+      `[analyze] model=${model} requested=${requestedModel || "(none)"} allowed=${[
+        ...ALLOWED_MODELS,
+      ].join(",")} sources=${promptSources.length}`
+    )
+
     const result = await openRouterChat({
       apiKey,
       payload: {
         model,
-        models: [model],
         messages: [
           {
             role: "user",
@@ -226,15 +260,28 @@ Return JSON with exactly this structure:
         reasoning: {
           enabled: false,
         },
+        max_tokens: OPENROUTER_MAX_TOKENS,
       },
     })
 
     if (!result.ok) {
-      console.error("OpenRouter error:", openRouterErrorMessage(result))
+      // openRouterErrorMessage is no longer the bare upstream "Provider
+      // returned error" string; for an exhausted daily quota it names the
+      // reset time instead.
+      const message = openRouterErrorMessage(result)
+
+      console.error(
+        `[analyze] model=${model} failed after ${result.elapsedMs ?? 0}ms: ${message}`
+      )
 
       return NextResponse.json(
         {
-          error: openRouterErrorMessage(result),
+          error: message,
+          model,
+          // Secret-free diagnostics: status, code, provider, rate-limit
+          // headers and the reset time. Additive, so the frontend keeps
+          // reading `error` exactly as before.
+          openrouter: openRouterDiagnostics(result),
         },
         { status: 502 }
       )
@@ -243,6 +290,7 @@ Return JSON with exactly this structure:
     const data = result.data
 
     const content = data?.choices?.[0]?.message?.content
+    const finishReason = data?.choices?.[0]?.finish_reason
 
     if (!content) {
       return NextResponse.json(
@@ -262,8 +310,24 @@ Return JSON with exactly this structure:
 
       analysis = JSON.parse(cleaned)
     } catch {
+      // Hitting max_tokens mid-object is a different problem from the model
+      // emitting malformed JSON, and says so.
+      const truncated = finishReason === "length"
+
+      console.error(
+        `[analyze] unparseable reply from model=${model} finishReason=${finishReason ?? "unknown"} length=${String(
+          content
+        ).length}`
+      )
+
       return NextResponse.json(
-        { error: "The model returned invalid JSON." },
+        {
+          error: truncated
+            ? "The model ran out of output space before finishing. Try again, or raise OPENROUTER_MAX_TOKENS."
+            : "The model returned invalid JSON.",
+          model,
+          finishReason: finishReason ?? null,
+        },
         { status: 502 }
       )
     }

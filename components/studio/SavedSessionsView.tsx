@@ -1,7 +1,10 @@
 "use client";
 
 import { ArrowRight, Bookmark, Trash2 } from "lucide-react";
-import type { SavedSession } from "@/lib/studio";
+import { sourceType, type SavedSession } from "@/lib/studio";
+
+const recipeCount = (session: SavedSession) =>
+  (session.sources ?? []).filter((source) => sourceType(source) === "recipe").length;
 
 type SavedSessionsViewProps = {
   sessions: SavedSession[];
@@ -19,12 +22,11 @@ export function SavedSessionsView({
   return (
     <main className="saved-page">
       <header className="saved-head">
-        <span className="eyebrow">Your workspace</span>
-        <h1>Saved research</h1>
+        <span className="eyebrow">Recent content</span>
+        <h1>Your projects</h1>
         <p>
-          Every session you kept, with its pack intact — images, sources,
-          findings and notes. Opening one puts you straight back into that
-          workspace.
+          Everything you saved, ready to reopen — recipes, images, sources and
+          any carousel you built.
         </p>
       </header>
 
@@ -32,11 +34,11 @@ export function SavedSessionsView({
         <div className="empty-state empty-state-large">
           <Bookmark size={26} />
           <p>
-            No saved sessions yet. Run a search and press &ldquo;Save
-            session&rdquo; once you have something worth keeping.
+            No projects yet. Search a dish, then press &ldquo;Save
+            project&rdquo; when you have something worth keeping.
           </p>
           <button className="button button-primary" onClick={onGoStart}>
-            Start research
+            Start with a dish
           </button>
         </div>
       ) : (
@@ -51,15 +53,19 @@ export function SavedSessionsView({
                     <span className="session-blank" aria-hidden="true" />
                   )}
                   <span className="session-body">
-                    <span className="eyebrow">{session.kind || "Research"}</span>
+                    <span className="eyebrow">
+                      {session.pack?.carousel ? "Carousel saved" : session.kind || "Recipe"}
+                    </span>
                     <strong>{session.dish}</strong>
                     <small>{session.context || "No context given"}</small>
                     <small className="session-stats">
-                      {session.pack?.visuals.length ?? 0} images ·{" "}
-                      {session.pack?.sources.length ?? 0} sources ·{" "}
-                      {session.pack?.findings.length ?? 0} findings
+                      {recipeCount(session)} recipe{recipeCount(session) === 1 ? "" : "s"} ·{" "}
+                      {session.images?.length ?? 0} images
                       {session.savedAt
-                        ? ` · ${new Date(session.savedAt).toLocaleDateString()}`
+                        ? ` · Created ${new Date(session.savedAt).toLocaleDateString(undefined, {
+                            month: "short",
+                            day: "numeric",
+                          })}`
                         : ""}
                     </small>
                   </span>

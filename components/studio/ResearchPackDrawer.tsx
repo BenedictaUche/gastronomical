@@ -80,7 +80,7 @@ export function ResearchPackDrawer({
   const empty = count === 0;
 
   const packText = [
-    `RESEARCH PACK — ${dish || "Untitled research"}`,
+    `MY CONTENT PACK — ${dish || "Untitled project"}`,
     "",
     `VISUAL REFERENCES (${pack.visuals.length})`,
     ...pack.visuals.map((index) => {
@@ -111,17 +111,18 @@ export function ResearchPackDrawer({
         className="pack-drawer"
         role="dialog"
         aria-modal="true"
-        aria-label="Research pack"
+        aria-label="My content pack"
         onMouseDown={(event) => event.stopPropagation()}
       >
         <header className="pack-head">
           <div>
             <span className="eyebrow">Everything you chose to keep</span>
             <h2>
-              Research pack <span className="pack-total">{count}</span>
+              {dish ? `My content pack for ${dish}` : "My content pack"}{" "}
+              <span className="pack-total">{count}</span>
             </h2>
           </div>
-          <button className="pack-close" onClick={onClose} aria-label="Close research pack">
+          <button className="pack-close" onClick={onClose} aria-label="Close content pack">
             <X size={18} />
           </button>
         </header>
@@ -130,16 +131,32 @@ export function ResearchPackDrawer({
           <div className="pack-empty">
             <Bookmark size={26} />
             <p>
-              Nothing kept yet. Finding something and keeping it are two
-              different things — use <strong>Keep</strong> on an image, source or
-              finding and it lands here.
+              Nothing kept yet. Use <strong>Use in carousel</strong> on an image
+              or keep a source and it lands here.
             </p>
           </div>
         ) : (
           <div className="pack-body">
+            {pack.carousel && (
+              <section className="pack-group">
+                <div className="pack-group-head">
+                  <h3>Saved carousel</h3>
+                  <span>{pack.carousel.slides.length}</span>
+                </div>
+                <p className="pack-carousel-note">
+                  <Sparkles size={14} aria-hidden="true" />
+                  {pack.carousel.title || "Untitled carousel"} — saved{" "}
+                  {new Date(pack.carousel.savedAt).toLocaleDateString(undefined, {
+                    month: "short",
+                    day: "numeric",
+                  })}
+                </p>
+              </section>
+            )}
+
             <section className="pack-group">
               <div className="pack-group-head">
-                <h3>Visual references</h3>
+                <h3>Images for the carousel</h3>
                 <span>{pack.visuals.length}</span>
               </div>
               <ul className="pack-images">
@@ -278,8 +295,8 @@ export function ResearchPackDrawer({
         )}
 
         <footer className="pack-foot">
-          <button className="button button-primary" onClick={onPlan} disabled={empty}>
-            Plan a carousel from this
+          <button className="button button-primary" onClick={onPlan}>
+            <Sparkles size={14} /> Create carousel from this
           </button>
           <div className="pack-foot-row">
             <button className="button button-quiet" onClick={onCopy} disabled={empty}>

@@ -9,10 +9,11 @@ import { ResearchPackDrawer } from "@/components/studio/ResearchPackDrawer";
 import { CarouselPlanner } from "@/components/studio/CarouselPlanner";
 import {
   DEFAULT_MODEL_ID,
-  RESEARCH_KINDS,
+  DEFAULT_CONTENT_TYPE,
   MAX_SESSIONS,
   emptyPack,
   loadSessions,
+  migrateSlide,
   persistSessions,
   type AnalysisData,
   type CarouselSlide,
@@ -27,6 +28,16 @@ import {
 type ResearchPayload = {
   images: ResearchImage[];
   sources: ResearchSource[];
+  warnings?: string[];
+};
+
+/** Content type → default carousel type. Falls back to discovery. */
+const DEFAULT_CAROUSEL_TYPE: Record<string, string> = {
+  Recipe: "recipe",
+  "Food discovery": "discovery",
+  "Recipe roundup": "roundup",
+  "Things to know": "things",
+  "Ingredients & techniques": "ingredients",
 };
 
 export default function Page() {
@@ -36,7 +47,7 @@ export default function Page() {
   /* research brief */
   const [dish, setDish] = useState("");
   const [context, setContext] = useState("");
-  const [kind, setKind] = useState<string>(RESEARCH_KINDS[0]);
+  const [kind, setKind] = useState<string>(DEFAULT_CONTENT_TYPE);
   const [extra, setExtra] = useState("");
   const [showExtra, setShowExtra] = useState(false);
   const [model, setModel] = useState(DEFAULT_MODEL_ID);
@@ -45,6 +56,7 @@ export default function Page() {
   const [loading, setLoading] = useState(false);
   const [phase, setPhase] = useState<"searching" | "analyzing" | null>(null);
   const [researchError, setResearchError] = useState<string | null>(null);
+  const [researchWarning, setResearchWarning] = useState<string | null>(null);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [reanalyzing, setReanalyzing] = useState(false);
   const [research, setResearch] = useState<ResearchPayload | null>(null);
@@ -56,13 +68,15 @@ export default function Page() {
   const [packCopied, setPackCopied] = useState(false);
   const [savedSession, setSavedSession] = useState(false);
 
-  /* carousel planning */
-  const [direction, setDirection] = useState("discovery");
-  const [outlineTitle, setOutlineTitle] = useState("");
+  /* carousel */
+  const [carouselType, setCarouselType] = useState("recipe");
+  const [carouselTitle, setCarouselTitle] = useState("");
   const [slides, setSlides] = useState<CarouselSlide[]>([]);
-  const [outlineError, setOutlineError] = useState<string | null>(null);
+  const [carouselError, setCarouselError] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
-  const [outlineCopied, setOutlineCopied] = useState(false);
+  const [regeneratingIndex, setRegeneratingIndex] = useState<number | null>(null);
+  const [carouselCopied, setCarouselCopied] = useState(false);
+  const [carouselSaved, setCarouselSaved] = useState(false);
 
   useEffect(() => {
     setSessions(loadSessions());
@@ -77,12 +91,15 @@ export default function Page() {
     setResearch(null);
     setAnalysis(null);
     setAnalysisError(null);
+    setResearchWarning(null);
     setPack(emptyPack());
     setSavedSession(false);
     setPackOpen(false);
     setSlides([]);
-    setOutlineTitle("");
-    setOutlineError(null);
+    setCarouselTitle("");
+    setCarouselError(null);
+    setCarouselSaved(false);
+    setRegeneratingIndex(null);
   }, []);
 
   const requestAnalysis = async (target: ResearchSource[], topic: string, contextText: string) => {
@@ -109,6 +126,7 @@ export default function Page() {
     setResearchError(null);
     setLoading(true);
     setPhase("searching");
+    setCarouselType(DEFAULT_CAROUSEL_TYPE[kind] ?? "discovery");
 
     try {
       const response = await fetch("/api/research", {
@@ -120,20 +138,29 @@ export default function Page() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Research failed. Please try again.");
+        throw new Error(data.error || "Search failed. Please try again.");
       }
+
+      // A search that came back half-empty is still shown, with the reason the
+      // route reported rather than a guess.
+      const warnings: string[] = Array.isArray(data.warnings)
+        ? data.warnings.filter((warning: unknown): warning is string => typeof warning === "string")
+        : [];
 
       const payload: ResearchPayload = {
         images: Array.isArray(data.images) ? data.images : [],
         sources: Array.isArray(data.sources) ? data.sources : [],
+        warnings,
       };
 
       setResearch(payload);
+      setResearchWarning(warnings[0] ?? null);
       setView("workspace");
 
       if (payload.sources.length === 0) {
         setAnalysisError(
-          "No web sources came back for this search, so there is nothing to synthesise yet.",
+          warnings[0] ??
+            "No web sources came back for this search, so there is nothing to compare yet.",
         );
         return;
       }
@@ -145,12 +172,12 @@ export default function Page() {
         setAnalysis(result.analysis);
       } catch {
         setAnalysisError(
-          "The sources came back, but the model could not finish synthesising them. The research below is still usable.",
+          "The sources came back, but the comparison could not be written. The recipes below are still usable.",
         );
       }
     } catch (error) {
       setResearchError(
-        error instanceof Error ? error.message : "Research failed. Please try again.",
+        error instanceof Error ? error.message : "Search failed. Please try again.",
       );
     } finally {
       setLoading(false);
@@ -216,16 +243,16 @@ export default function Page() {
     );
 
   const removeNote = (note: string) =>
-    setPack((current) => ({
-      ...current,
-      notes: current.notes.filter((item) => item !== note),
-    }));
+    setPack((current) => ({ ...current, notes: current.notes.filter((item) => item !== note) }));
 
   /* -------------------------------- sessions --------------------------------- */
 
-  const saveSession = () => {
+  const saveSession = (packOverride?: ResearchPack, carouselSlides?: CarouselSlide[]) => {
     if (!research) return;
 
+    const activePack = packOverride ?? pack;
+
+    // A carousel saved on the plan screen travels with the project too.
     const session: SavedSession = {
       id: `${Date.now()}`,
       dish,
@@ -237,7 +264,18 @@ export default function Page() {
       images: research.images,
       sources: research.sources,
       analysis,
-      pack,
+      pack:
+        carouselSlides && carouselSlides.length > 0
+          ? {
+              ...activePack,
+              carousel: {
+                title: carouselTitle || `${dish} carousel`,
+                type: carouselType,
+                slides: carouselSlides,
+                savedAt: new Date().toISOString(),
+              },
+            }
+          : activePack,
     };
 
     // Replace any earlier save of the same dish rather than piling up copies.
@@ -255,13 +293,34 @@ export default function Page() {
     resetSession();
     setDish(session.dish);
     setContext(session.context ?? "");
-    setKind(session.kind || RESEARCH_KINDS[0]);
+    setKind(session.kind || DEFAULT_CONTENT_TYPE);
     setExtra(session.extra ?? "");
     setModel(session.model || DEFAULT_MODEL_ID);
     setResearch({ images: session.images ?? [], sources: session.sources ?? [] });
     setAnalysis(session.analysis ?? null);
     setPack(session.pack);
     setSavedSession(true);
+
+    // Reopen the saved carousel exactly where she left it.
+    const savedCarousel = session.pack?.carousel;
+    if (savedCarousel && savedCarousel.slides.length > 0) {
+      // Sessions saved before the full-bleed redesign carry a flat body and a
+      // legacy layout, so bring them up to the current shape rather than
+      // discarding them.
+      setSlides(
+        savedCarousel.slides.map((slide, index, all) =>
+          migrateSlide(slide as Partial<CarouselSlide>, index, all.length, {
+            style: "editorial",
+            focus: "center",
+            imageIndex: null,
+          }),
+        ),
+      );
+      setCarouselTitle(savedCarousel.title || "");
+      setCarouselType(savedCarousel.type || "recipe");
+      setCarouselSaved(true);
+    }
+
     setView("workspace");
   };
 
@@ -277,22 +336,37 @@ export default function Page() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  /* ---------------------------- carousel planning ---------------------------- */
+  /* ------------------------------ carousel creation --------------------------- */
 
-  const generateOutline = async () => {
+  // The route returns content only; design is applied here and then editable.
+  const normalizeSlides = (raw: unknown): CarouselSlide[] => {
+    const source = Array.isArray(raw) ? raw : [];
+    const defaults = {
+      style: "editorial" as const,
+      focus: "center" as const,
+      imageIndex: null,
+    };
+
+    return source.map((slide: Record<string, unknown>, index: number) =>
+      migrateSlide(slide, index, source.length, defaults),
+    );
+  };
+
+  const generateCarousel = async (regenerateIndex?: number) => {
     if (!research) return;
 
-    setGenerating(true);
-    setOutlineError(null);
+    const indexProvided = typeof regenerateIndex === "number";
+    if (indexProvided) setRegeneratingIndex(regenerateIndex);
+    else setGenerating(true);
+    setCarouselError(null);
 
-    const keptSources = pack.sources
-      .map((index) => sources[index])
-      .filter((source): source is ResearchSource => Boolean(source))
-      .map((source) => ({
-        title: source.title || "Untitled source",
-        source: source.source || "",
-        text: (source.content || source.snippet || "").slice(0, 600),
-      }));
+    // Grounding: the recipes and sources this search actually retrieved.
+    const recipeSources = sources.filter(
+      (source) =>
+        source.contentType === "recipe" ||
+        (source.ingredients?.length ?? 0) > 0 ||
+        (source.instructions?.length ?? 0) > 0,
+    );
 
     try {
       const response = await fetch("/api/carousel", {
@@ -301,48 +375,100 @@ export default function Page() {
         body: JSON.stringify({
           dish,
           context,
-          direction,
+          type: carouselType,
           model,
+          regenerateIndex: indexProvided ? regenerateIndex : undefined,
+          recipes: recipeSources.slice(0, 6).map((source) => ({
+            title: source.title || "",
+            source: source.source || "",
+            author: source.author || "",
+            yield: source.yield || "",
+            prepTime: source.prepTime || "",
+            cookTime: source.cookTime || "",
+            ingredients: source.ingredients ?? [],
+            instructions: source.instructions ?? [],
+          })),
           findings: pack.findings.map((finding) => ({
             text: finding.text,
             sources: finding.sources,
           })),
           notes: pack.notes,
-          sources: keptSources,
+          sources: sources.slice(0, 12).map((source) => ({
+            title: source.title || "Untitled source",
+            source: source.source || "",
+            text: (source.content || source.snippet || "").slice(0, 600),
+          })),
         }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Could not draft an outline.");
+        throw new Error(data.error || "Could not create the carousel.");
       }
 
-      setOutlineTitle(data.title || "");
-      setSlides(
-        (Array.isArray(data.slides) ? data.slides : []).map(
-          (slide: Partial<CarouselSlide>, index: number) => ({
-            id: `slide-${index}-${Date.now().toString(36)}`,
-            title: typeof slide.title === "string" ? slide.title : "",
-            body: typeof slide.body === "string" ? slide.body : "",
-            evidence: Array.isArray(slide.evidence)
-              ? slide.evidence.filter((entry): entry is string => typeof entry === "string")
-              : [],
-          }),
-        ),
-      );
+      const incoming = normalizeSlides(data.slides);
+
+      if (indexProvided && typeof data.regenerateIndex === "number") {
+        // Swap only the regenerated slide; the rest stay as she edited them.
+        const target = data.regenerateIndex;
+        setSlides((current) =>
+          current.map((slide, position) =>
+            position === target && incoming[0] ? { ...incoming[0], id: slide.id } : slide,
+          ),
+        );
+      } else {
+        setSlides(incoming);
+        if (data.title) setCarouselTitle(data.title);
+        setCarouselSaved(false);
+      }
     } catch (error) {
-      setOutlineError(
-        error instanceof Error ? error.message : "Could not draft an outline.",
+      setCarouselError(
+        error instanceof Error ? error.message : "Could not create the carousel.",
       );
     } finally {
-      setGenerating(false);
+      if (indexProvided) setRegeneratingIndex(null);
+      else setGenerating(false);
     }
+  };
+
+  const saveCarousel = () => {
+    if (slides.length === 0) return;
+
+    const nextPack: ResearchPack = {
+      ...pack,
+      carousel: {
+        title: carouselTitle || `${dish} carousel`,
+        type: carouselType,
+        slides,
+        savedAt: new Date().toISOString(),
+      },
+    };
+
+    setPack(nextPack);
+    setCarouselSaved(true);
+    saveSession(nextPack);
+  };
+
+  const copyCarousel = async () => {
+    const text = [
+      carouselTitle || dish,
+      "",
+      ...slides.flatMap((slide, index) => [
+        `SLIDE ${index + 1} — ${slide.title || "(untitled)"}`,
+        slide.body,
+        "",
+      ]),
+    ].join("\n");
+
+    await navigator.clipboard?.writeText(text);
+    setCarouselCopied(true);
+    window.setTimeout(() => setCarouselCopied(false), 1800);
   };
 
   const copyPack = async () => {
     const lines = [
-      `RESEARCH PACK — ${dish}`,
+      `CONTENT PACK — ${dish}`,
       "",
       `IMAGES (${pack.visuals.length})`,
       ...pack.visuals.map((index) => {
@@ -368,23 +494,6 @@ export default function Page() {
     window.setTimeout(() => setPackCopied(false), 1800);
   };
 
-  const copyOutline = async () => {
-    const text = [
-      outlineTitle || dish,
-      `Direction: ${direction}`,
-      "",
-      ...slides.flatMap((slide, index) => [
-        `${index + 1}. ${slide.title}`,
-        slide.body ? `   ${slide.body}` : "",
-        slide.evidence.length ? `   Grounded in: ${slide.evidence.join("; ")}` : "",
-      ]),
-    ].join("\n");
-
-    await navigator.clipboard?.writeText(text);
-    setOutlineCopied(true);
-    window.setTimeout(() => setOutlineCopied(false), 1800);
-  };
-
   const navigate = (next: StudioView) => {
     setView(next);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -395,8 +504,6 @@ export default function Page() {
       <TopBar
         view={view}
         onNavigate={navigate}
-        model={model}
-        onModelChange={setModel}
         pack={pack}
         hasSession={hasSession}
         onOpenPack={() => setPackOpen(true)}
@@ -433,6 +540,7 @@ export default function Page() {
           model={model}
           images={images}
           sources={sources}
+          warning={researchWarning}
           pack={pack}
           analysis={analysis}
           analysisBusy={analysisBusy}
@@ -441,7 +549,7 @@ export default function Page() {
           savedSession={savedSession}
           onNewResearch={newResearch}
           onReanalyze={runReanalysis}
-          onSaveSession={saveSession}
+          onSaveSession={() => saveSession()}
           onOpenPack={() => setPackOpen(true)}
           onPlan={() => navigate("plan")}
           onToggleVisual={toggleVisual}
@@ -468,20 +576,27 @@ export default function Page() {
           dish={dish}
           context={context}
           pack={pack}
+          images={images}
           model={model}
-          title={outlineTitle}
+          title={carouselTitle}
           slides={slides}
-          direction={direction}
+          type={carouselType}
           generating={generating}
-          error={outlineError}
-          copied={outlineCopied}
-          onDirectionChange={setDirection}
-          onGenerate={generateOutline}
-          onTitleChange={setOutlineTitle}
-          onSlidesChange={setSlides}
-          onCopy={copyOutline}
+          regeneratingIndex={regeneratingIndex}
+          error={carouselError}
+          copied={carouselCopied}
+          carouselSaved={carouselSaved}
+          onTypeChange={setCarouselType}
+          onGenerate={() => generateCarousel()}
+          onRegenerateSlide={(index) => generateCarousel(index)}
+          onTitleChange={setCarouselTitle}
+          onSlidesChange={(next) => {
+            setSlides(next);
+            setCarouselSaved(false);
+          }}
+          onCopy={copyCarousel}
+          onSaveCarousel={saveCarousel}
           onGoStart={newResearch}
-          onOpenPack={() => setPackOpen(true)}
         />
       )}
 

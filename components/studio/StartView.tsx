@@ -1,11 +1,13 @@
 "use client";
 
-import { ArrowRight, ChevronDown, Check, Plus, Sparkles } from "lucide-react";
+import { useState } from "react";
+import { ArrowRight, ChevronDown, Check, Plus, Search } from "lucide-react";
 import {
+  CONTENT_TYPES,
+  DEFAULT_CONTENT_TYPE,
   DEFAULT_MODEL_ID,
   MODELS,
-  RESEARCH_KINDS,
-  modelLabel,
+  sourceType,
   type SavedSession,
 } from "@/lib/studio";
 
@@ -39,6 +41,9 @@ const IDEAS: { dish: string; context: string; kind: string }[] = [
   { dish: "Okonomiyaki", context: "Kansai Japanese", kind: "Food discovery" },
 ];
 
+const recipeCount = (session: SavedSession) =>
+  (session.sources ?? []).filter((source) => sourceType(source) === "recipe").length;
+
 export function StartView({
   dish,
   context,
@@ -60,87 +65,57 @@ export function StartView({
   onOpenSession,
 }: StartViewProps) {
   const recent = sessions.slice(0, 3);
+  const [advanced, setAdvanced] = useState(false);
 
   return (
     <main className="start-page">
       <div className="start-hero">
-        <span className="kicker">
-         A research studio for food creators
-        </span>
+        {/* <span className="kicker">Research less. Create faster.</span> */}
         <h1>
-          What are you
-          {/* <br /> */}
-          <em> researching today?</em>
+          What are you making
+          <em> content about?</em>
         </h1>
-        {/* <p className="start-lede">
-          Bring the searching into one place — photographs, recipes, local
-          knowledge and the notes in your head — then carry it straight into a
-          carousel.
-        </p> */}
+        <p className="start-lede">
+          Find reliable recipes, compare sources, and turn your research into a
+          ready-to-use carousel.
+        </p>
       </div>
 
-      <section className="start-form" aria-label="Start a research session">
-        <div className="start-form-fields">
-          <label className="field field-lead">
-            <span className="field-label">Dish or food topic</span>
-            <input
-              value={dish}
-              onChange={(event) => onDishChange(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter" && !loading) onSubmit();
-              }}
-              placeholder="ekpang nkukwo, mofongo, jollof rice…"
-              autoComplete="off"
-            />
-          </label>
+      <section className="start-form" aria-label="Start a search">
+        <label className="field field-search">
+          <span className="sr-only">Search a dish, ingredient, or food idea</span>
+          <Search size={20} className="search-icon" aria-hidden="true" />
+          <input
+            value={dish}
+            onChange={(event) => onDishChange(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && !loading) onSubmit();
+            }}
+            placeholder="Search a dish, ingredient, or food idea…"
+            autoComplete="off"
+          />
+        </label>
 
-          <label className="field">
-            <span className="field-label">Context or regional focus</span>
-            <input
-              value={context}
-              onChange={(event) => onContextChange(event.target.value)}
-              placeholder="Nigerian Ibibio, Traditional Puerto Rican…"
-              autoComplete="off"
-            />
-          </label>
-        </div>
-
-        <fieldset className="field">
-          <legend className="field-label">What kind of research is this?</legend>
-          <div className="choice-row">
-            {RESEARCH_KINDS.map((option) => (
+        <fieldset className="field type-field">
+          <legend className="field-label">What are you creating?</legend>
+          <div className="type-grid">
+            {CONTENT_TYPES.map((option) => (
               <button
                 type="button"
-                key={option}
-                className={kind === option ? "choice choice-active" : "choice"}
-                aria-pressed={kind === option}
-                onClick={() => onKindChange(option)}
+                key={option.id}
+                className={kind === option.id ? "type-card type-card-on" : "type-card"}
+                aria-pressed={kind === option.id}
+                onClick={() => onKindChange(option.id)}
               >
-                {kind === option && <Check size={13} />}
-                {option}
+                <span className="type-card-head">
+                  {kind === option.id && <Check size={13} />}
+                  <strong>{option.label}</strong>
+                </span>
+                <small>{option.description}</small>
               </button>
             ))}
           </div>
         </fieldset>
-
-        <div className="start-form-extra">
-          <button type="button" className="disclosure" onClick={onToggleExtra} aria-expanded={showExtra}>
-            {showExtra ? <ChevronDown size={15} /> : <Plus size={15} />}
-            {showExtra ? "Hide additional instructions" : "Add additional instructions"}
-            <span>Optional</span>
-          </button>
-          {showExtra && (
-            <label className="field">
-              <span className="sr-only">Additional instructions</span>
-              <textarea
-                value={extra}
-                onChange={(event) => onExtraChange(event.target.value)}
-                placeholder="Anything the research should pay extra attention to…"
-                rows={3}
-              />
-            </label>
-          )}
-        </div>
 
         {error && (
           <p className="form-error" role="alert">
@@ -149,33 +124,11 @@ export function StartView({
         )}
 
         <div className="start-form-footer">
-          <div className="model-inline">
-            {/* <span className="model-dot" aria-hidden="true" /> */}
-            {/* <span>
-              <small>Synthesis model</small>
-              <strong>{modelLabel(model)}</strong>
-            </span> */}
-            {/* <select
-              className="model-inline-select"
-              value={model}
-              onChange={(event) => onModelChange(event.target.value)}
-              aria-label="Synthesis model"
-            >
-              {MODELS.map((option) => (
-                <option key={option.id} value={option.id} disabled={!option.available}>
-                  {option.name}
-                  {option.available ? "" : " — unavailable"}
-                </option>
-              ))}
-            </select>
-            {model !== DEFAULT_MODEL_ID && (
-              <button className="model-reset" onClick={() => onModelChange(DEFAULT_MODEL_ID)}>
-                Reset
-              </button>
-            )} */}
-          </div>
-
-          <button className="button button-primary" onClick={onSubmit} disabled={loading || !dish.trim()}>
+          <button
+            className="button button-primary button-big"
+            onClick={onSubmit}
+            disabled={loading || !dish.trim()}
+          >
             {loading ? (
               <>
                 <span className="spinner" aria-hidden="true" />
@@ -183,10 +136,73 @@ export function StartView({
               </>
             ) : (
               <>
-                Start research <ArrowRight size={16} />
+                Find recipes <ArrowRight size={16} />
               </>
             )}
           </button>
+        </div>
+
+        <div className="start-form-extra">
+          <button
+            type="button"
+            className="disclosure"
+            onClick={() => setAdvanced((value) => !value)}
+            aria-expanded={advanced}
+          >
+            {advanced ? <ChevronDown size={15} /> : <Plus size={15} />}
+            {advanced ? "Hide advanced options" : "Advanced options"}
+            <span>Optional</span>
+          </button>
+
+          {advanced && (
+            <div className="advanced-box">
+              <label className="field">
+                <span className="field-label">Context or regional focus</span>
+                <input
+                  value={context}
+                  onChange={(event) => onContextChange(event.target.value)}
+                  placeholder="Nigerian Ibibio, Traditional Puerto Rican…"
+                  autoComplete="off"
+                />
+              </label>
+
+              <label className="field">
+                <span className="field-label">Anything extra to pay attention to</span>
+                <textarea
+                  value={extra}
+                  onChange={(event) => onExtraChange(event.target.value)}
+                  placeholder="Optional instructions for the search…"
+                  rows={3}
+                />
+              </label>
+
+              <label className="field">
+                <span className="field-label">Model</span>
+                <select
+                  className="model-select"
+                  value={model}
+                  onChange={(event) => onModelChange(event.target.value)}
+                  aria-label="Analysis model"
+                >
+                  {MODELS.map((option) => (
+                    <option key={option.id} value={option.id} disabled={!option.available}>
+                      {option.name}
+                      {option.available ? "" : " — unavailable"}
+                    </option>
+                  ))}
+                </select>
+                {model !== DEFAULT_MODEL_ID && (
+                  <button
+                    type="button"
+                    className="model-reset"
+                    onClick={() => onModelChange(DEFAULT_MODEL_ID)}
+                  >
+                    Reset to default
+                  </button>
+                )}
+              </label>
+            </div>
+          )}
         </div>
       </section>
 
@@ -200,7 +216,7 @@ export function StartView({
               onClick={() => {
                 onDishChange(idea.dish);
                 onContextChange(idea.context);
-                onKindChange(idea.kind);
+                onKindChange(idea.kind || DEFAULT_CONTENT_TYPE);
               }}
             >
               <strong>{idea.dish}</strong>
@@ -213,8 +229,8 @@ export function StartView({
       {recent.length > 0 && (
         <section className="recent-strip">
           <div className="recent-strip-head">
-            <span className="eyebrow">Your workspace</span>
-            <h2>Recent research</h2>
+            <span className="eyebrow">Pick up where you left off</span>
+            <h2>Your projects</h2>
           </div>
           <ul className="recent-list">
             {recent.map((session) => (
@@ -228,8 +244,14 @@ export function StartView({
                   <span className="recent-item-text">
                     <strong>{session.dish}</strong>
                     <small>
-                      {session.context || "No context"} ·{" "}
-                      {session.pack?.visuals?.length ?? 0} saved
+                      {session.kind || "Recipe"} · {recipeCount(session)} recipes ·{" "}
+                      {session.images?.length ?? 0} images
+                      {session.savedAt
+                        ? ` · Created ${new Date(session.savedAt).toLocaleDateString(undefined, {
+                            month: "short",
+                            day: "numeric",
+                          })}`
+                        : ""}
                     </small>
                   </span>
                   <ArrowRight size={15} />

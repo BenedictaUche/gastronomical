@@ -1,11 +1,12 @@
 "use client";
 
-import { useRef } from "react";
-import { ArrowLeft, Compass, Images, NotebookPen, ScrollText, Sparkles } from "lucide-react";
+import { useRef, useState } from "react";
+import { ArrowLeft, ChevronDown } from "lucide-react";
 import { ResearchOverview } from "./ResearchOverview";
+import { RecipeCards } from "./RecipeCards";
+import { Comparison } from "./Comparison";
 import { VisualGallery } from "./VisualGallery";
 import { SourceLibrary } from "./SourceLibrary";
-import { Synthesis } from "./Synthesis";
 import { NotesBoard } from "./NotesBoard";
 import type {
   AnalysisData,
@@ -23,6 +24,7 @@ type WorkspaceProps = {
   model: string;
   images: ResearchImage[];
   sources: ResearchSource[];
+  warning?: string | null;
   pack: ResearchPack;
   analysis: AnalysisData | null;
   analysisBusy: boolean;
@@ -42,20 +44,13 @@ type WorkspaceProps = {
   onRemoveNote: (note: string) => void;
 };
 
-const JUMPS = [
-  { id: "visuals-heading", label: "Photographs", icon: Images },
-  { id: "sources-heading", label: "Sources", icon: ScrollText },
-  { id: "synthesis-heading", label: "Synthesis", icon: Sparkles },
-  { id: "notes-heading", label: "Notes", icon: NotebookPen },
-];
-
 export function Workspace({
   dish,
   context,
   kind,
-  model,
   images,
   sources,
+  warning,
   pack,
   analysis,
   analysisBusy,
@@ -75,6 +70,11 @@ export function Workspace({
   onRemoveNote,
 }: WorkspaceProps) {
   const mainRef = useRef<HTMLElement>(null);
+  const [sourcesOpen, setSourcesOpen] = useState(false);
+
+  const recipeCount = sources.filter(
+    (source) => source.contentType === "recipe" || (source.ingredients?.length ?? 0) > 0,
+  ).length;
 
   const jumpTo = (id: string) => {
     const target = mainRef.current?.querySelector(`#${CSS.escape(id)}`);
@@ -84,22 +84,20 @@ export function Workspace({
   return (
     <main className="workspace" ref={mainRef}>
       <button className="back-link" onClick={onNewResearch}>
-        <ArrowLeft size={15} /> New research
+        <ArrowLeft size={15} /> New search
       </button>
 
       <ResearchOverview
         dish={dish}
         context={context}
         kind={kind}
-        model={model}
         summary={analysis?.summary ?? ""}
-        imageCount={images.length}
-        sources={sources}
         analysisBusy={analysisBusy}
         analysisError={analysisError}
         reanalyzing={reanalyzing}
         pack={pack}
         savedSession={savedSession}
+        recipeCount={recipeCount}
         onReanalyze={onReanalyze}
         onSaveSession={onSaveSession}
         onOpenPack={onOpenPack}
@@ -107,10 +105,13 @@ export function Workspace({
       />
 
       <nav className="section-jump" aria-label="Jump to section">
-        <Compass size={14} aria-hidden="true" />
-        {JUMPS.map((jump) => (
+        {[
+          { id: "recipes-heading", label: "Recipes" },
+          { id: "compare-heading", label: "Differences" },
+          { id: "visuals-heading", label: "Images" },
+          { id: "notes-heading", label: "Notes" },
+        ].map((jump) => (
           <button key={jump.id} onClick={() => jumpTo(jump.id)}>
-            <jump.icon size={13} aria-hidden="true" />
             {jump.label}
           </button>
         ))}
@@ -120,36 +121,57 @@ export function Workspace({
         </button>
       </nav>
 
+      <RecipeCards dish={dish} sources={sources} />
+
+      <Comparison
+        analysis={analysis}
+        sources={sources}
+        busy={analysisBusy}
+        error={analysisError}
+        pack={pack}
+        onToggleFinding={onToggleFinding}
+      />
+
       <VisualGallery
         dish={dish}
         images={images}
         pack={pack}
+        notice={warning}
         onToggleSave={onToggleVisual}
         onSetNote={onSetNote}
       />
 
-      <SourceLibrary sources={sources} pack={pack} onToggleSave={onToggleSource} />
+      <div className="mid-cta">
+        <p>Images and recipes are ready to become a carousel.</p>
+        <button className="button button-primary button-big" onClick={onPlan}>
+           Create my carousel
+        </button>
+      </div>
 
-      <Synthesis
-        analysis={analysis}
-        model={model}
-        busy={analysisBusy}
-        error={analysisError}
-        reanalyzing={reanalyzing}
-        pack={pack}
-        onReanalyze={onReanalyze}
-        onToggleFinding={onToggleFinding}
-      />
+      <section className="section section-sources-collapsed">
+        <button
+          className="sources-toggle"
+          onClick={() => setSourcesOpen((open) => !open)}
+          aria-expanded={sourcesOpen}
+          aria-controls="sources-panel"
+        >
+          <span>
+            <span className="eyebrow">Secondary</span>
+            <strong>
+              Sources used <span className="button-count">{sources.length}</span>
+            </strong>
+          </span>
+          <ChevronDown size={16} className={sourcesOpen ? "chevron-on" : ""} aria-hidden="true" />
+        </button>
 
-      <NotesBoard notes={pack.notes} onAdd={onAddNote} onRemove={onRemoveNote} />
-{/*
-      <footer className="workspace-foot">
-        <p>
-          Everything above came from live search results. Synthesised text is
-          generated from those results and is worth checking against the sources
-          before you publish.
-        </p>
-      </footer> */}
+        {sourcesOpen && (
+          <div id="sources-panel">
+            <SourceLibrary sources={sources} pack={pack} onToggleSave={onToggleSource} />
+          </div>
+        )}
+      </section>
+
+      {/* <NotesBoard notes={pack.notes} onAdd={onAddNote} onRemove={onRemoveNote} /> */}
     </main>
   );
 }

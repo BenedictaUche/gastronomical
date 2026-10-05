@@ -1,11 +1,5 @@
 @import 'tailwindcss';
 
-/* ============================================================================
-   Gastronomical — research studio stylesheet
-
-   Warm editorial direction: paper ground, serif display type, hairline rules
-   instead of boxes, and generous vertical rhythm so the material can breathe.
-   ========================================================================== */
 
 :root {
   --paper: #faf7f1;
@@ -624,9 +618,7 @@ img {
 .field input,
 .field textarea,
 .notes-input-row input,
-.outline-title,
-.slide-title,
-.slide-body {
+.outline-title {
   width: 100%;
   padding: 13px 0;
   border: 0;
@@ -639,9 +631,7 @@ img {
 .field input:focus,
 .field textarea:focus,
 .notes-input-row input:focus,
-.outline-title:focus,
-.slide-title:focus,
-.slide-body:focus {
+.outline-title:focus {
   border-color: var(--clay);
 }
 
@@ -2048,69 +2038,6 @@ img {
   flex: none;
 }
 
-.slide-list {
-  display: flex;
-  flex-direction: column;
-}
-
-.slide {
-  display: grid;
-  grid-template-columns: 48px minmax(0, 1fr) auto;
-  gap: 20px;
-  padding: 26px 0;
-  border-bottom: 1px solid var(--rule);
-}
-
-.slide-number {
-  font-family: var(--serif);
-  font-size: 14px;
-  color: var(--clay);
-  padding-top: 12px;
-}
-
-.slide-title {
-  font-family: var(--serif);
-  font-size: 21px;
-  letter-spacing: -0.015em;
-}
-
-.slide-body {
-  margin-top: 2px;
-  font-family: var(--serif);
-  font-size: 16px;
-  line-height: 1.6;
-  color: var(--ink-soft);
-  resize: vertical;
-}
-
-.slide-evidence {
-  margin-top: 14px;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
-}
-
-.slide-evidence > span:first-child {
-  font-size: 10px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--muted);
-  margin-right: 4px;
-}
-
-.slide-evidence-none {
-  font-size: 11.5px;
-  font-style: italic;
-  color: var(--muted);
-}
-
-.slide-controls {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
 .slide-controls button {
   display: grid;
   place-items: center;
@@ -2119,11 +2046,6 @@ img {
   border-radius: 50%;
   border: 1px solid var(--rule);
   color: var(--muted);
-}
-
-.slide-controls button:hover:not(:disabled) {
-  border-color: var(--rule-strong);
-  color: var(--ink);
 }
 
 .slide-remove:hover:not(:disabled) {
@@ -2297,6 +2219,1059 @@ img {
   color: var(--ink);
 }
 
+/* ============================ creator-first redesign ======================== */
+
+/* ------------------------------- start screen ------------------------------ */
+
+.start-lede {
+  max-width: 560px;
+}
+
+.field-search {
+  position: relative;
+  margin-bottom: 30px;
+}
+
+.field-search .search-icon {
+  position: absolute;
+  left: 2px;
+  top: 20px;
+  color: var(--muted);
+  pointer-events: none;
+}
+
+.field-search input {
+  padding: 18px 4px 18px 34px;
+  font-family: var(--serif);
+  font-size: clamp(22px, 3.4vw, 32px);
+  letter-spacing: -0.02em;
+  border-bottom-width: 2px;
+}
+
+.type-field {
+  margin-top: 4px;
+}
+
+.type-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 12px;
+}
+
+.type-card {
+  text-align: left;
+  padding: 15px 17px;
+  border-radius: 12px;
+  border: 1px solid var(--rule);
+  background: var(--paper-raised);
+  transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease;
+}
+
+.type-card:hover {
+  border-color: var(--rule-strong);
+  transform: translateY(-1px);
+}
+
+.type-card-on {
+  border-color: var(--sage);
+  background: var(--sage-soft);
+}
+
+.type-card-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.type-card-head strong {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: 17px;
+}
+
+.type-card small {
+  display: block;
+  margin-top: 5px;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.type-card-on small {
+  color: var(--sage);
+}
+
+.button-big {
+  padding: 14px 26px;
+  font-size: 14.5px;
+}
+
+.start-form-footer {
+  border-top: 0;
+  padding-top: 0;
+  margin-top: 4px;
+  justify-content: flex-start;
+}
+
+.advanced-box {
+  margin-top: 18px;
+  padding: 20px 22px;
+  border-radius: var(--radius);
+  border: 1px solid var(--rule);
+  background: var(--paper-raised);
+}
+
+.advanced-box .field:last-child {
+  margin-bottom: 0;
+}
+
+.model-select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 9px;
+  border: 1px solid var(--rule);
+  background: var(--paper);
+  font-size: 13px;
+}
+
+.model-reset {
+  margin-top: 8px;
+}
+
+/* ------------------------------- slim overview ---------------------------- */
+
+.overview-slim {
+  display: block;
+  padding-bottom: 30px;
+}
+
+.overview-slim .overview-main h1 {
+  margin-top: 14px;
+}
+
+.overview-slim .overview-summary {
+  max-width: 68ch;
+  margin-top: 18px;
+}
+
+.overview-actions-main {
+  margin-top: 28px;
+  align-items: center;
+}
+
+.overview-footnote {
+  margin-top: 20px;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* -------------------------------- recipe cards ---------------------------- */
+
+.recipe-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 26px;
+  margin-top: 34px;
+}
+
+.recipe-card {
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--radius);
+  border: 1px solid var(--rule);
+  background: var(--paper-raised);
+  overflow: hidden;
+  transition: border-color 0.18s ease;
+}
+
+.recipe-card:hover {
+  border-color: var(--rule-strong);
+}
+
+.recipe-image {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  background: var(--paper-sunk);
+}
+
+.recipe-card-body {
+  padding: 22px 24px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.recipe-card-head h3 {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: 23px;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+
+.recipe-from {
+  margin-top: 7px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.recipe-from strong {
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.recipe-facts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 14px 0;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+}
+
+.recipe-facts dt {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.recipe-facts dd {
+  margin: 5px 0 0;
+  font-family: var(--serif);
+  font-size: 15px;
+  line-height: 1.35;
+}
+
+.fact-missing {
+  font-size: 12px !important;
+  font-style: italic;
+  color: var(--muted);
+}
+
+.recipe-block h4 {
+  margin: 0 0 10px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--clay);
+}
+
+.recipe-ingredients {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.recipe-ingredients li {
+  font-family: var(--serif);
+  font-size: 15px;
+  line-height: 1.45;
+  padding-left: 14px;
+  position: relative;
+}
+
+.recipe-ingredients li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.62em;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--sage);
+}
+
+.spec-note {
+  display: inline-block;
+  margin-left: 7px;
+  font-family: var(--sans);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-style: normal;
+}
+
+.recipe-flag {
+  font-size: 12px;
+  font-style: italic;
+  color: var(--muted);
+}
+
+.recipe-method {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  counter-reset: method;
+}
+
+.recipe-method li {
+  font-family: var(--serif);
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: var(--ink-soft);
+  padding-left: 28px;
+  position: relative;
+  counter-increment: method;
+}
+
+.recipe-method li::before {
+  content: counter(method);
+  position: absolute;
+  left: 0;
+  top: 0;
+  font-family: var(--serif);
+  font-size: 13px;
+  color: var(--clay);
+}
+
+.recipe-card-foot {
+  margin-top: auto;
+  padding-top: 4px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+/* -------------------------------- comparison ------------------------------ */
+
+.compare-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 22px;
+  margin-top: 30px;
+}
+
+.compare-row {
+  padding: 18px 20px;
+  border-radius: 12px;
+  border: 1px solid var(--rule);
+  background: var(--paper-raised);
+}
+
+.compare-row > strong {
+  display: block;
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: 19px;
+  letter-spacing: -0.015em;
+}
+
+.compare-count {
+  display: block;
+  margin-top: 4px;
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--sage);
+}
+
+.compare-lines {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.compare-lines li {
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  padding-left: 12px;
+  position: relative;
+}
+
+.compare-lines li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.55em;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--rule-strong);
+}
+
+.details-toggle {
+  margin-top: 24px;
+}
+
+.compare-details {
+  margin-top: 26px;
+  padding-top: 26px;
+  border-top: 1px solid var(--rule);
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.compare-detail-block h3 {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: 22px;
+  letter-spacing: -0.02em;
+  margin-bottom: 14px;
+}
+
+/* ---------------------------------- mid CTA -------------------------------- */
+
+.mid-cta {
+  margin-top: 76px;
+  padding: 40px 36px;
+  border-radius: var(--radius);
+  background: var(--sage-soft);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.mid-cta p {
+  font-family: var(--serif);
+  font-size: clamp(19px, 2.4vw, 25px);
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+
+.mid-cta .button-primary {
+  background: var(--clay);
+}
+
+.mid-cta .button-primary:hover:not(:disabled) {
+  background: #97472e;
+}
+
+/* --------------------------- collapsed sources ---------------------------- */
+
+.section-sources-collapsed {
+  margin-top: 76px;
+  padding-top: 0;
+}
+
+.sources-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 0;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+  text-align: left;
+}
+
+.sources-toggle .eyebrow {
+  margin-bottom: 4px;
+}
+
+.sources-toggle strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: 21px;
+  letter-spacing: -0.02em;
+}
+
+.sources-toggle .button-count {
+  background: var(--paper-sunk);
+  color: var(--ink-soft);
+  font-family: var(--sans);
+  font-size: 11px;
+}
+
+.sources-toggle svg {
+  color: var(--muted);
+  transition: transform 0.2s ease;
+}
+
+.chevron-on {
+  transform: rotate(180deg);
+}
+
+.section-sources-collapsed .section-sources {
+  padding-top: 34px;
+}
+
+/* ------------------------------ carousel studio --------------------------- */
+
+.plan-head {
+  max-width: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.plan-head > div:first-child {
+  max-width: 720px;
+}
+
+.plan-head-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.plan-types {
+  margin-top: 44px;
+  padding-top: 34px;
+  padding-bottom: 34px;
+  border-top: 1px solid var(--rule-strong);
+  border-bottom: 1px solid var(--rule);
+  margin-bottom: 34px;
+}
+
+.direction-row {
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+
+.direction-row .direction {
+  flex: 1 1 200px;
+}
+
+.plan-generate {
+  padding: 60px 0 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 16px;
+}
+
+.plan-generate .plan-hint {
+  max-width: 460px;
+}
+
+.plan-title-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.plan-title-row .outline-title {
+  flex: 1;
+  margin-top: 0;
+}
+
+/* Slide plus its controls. The stage holds the artwork at 1080 x 1350 and is
+   only scaled by transform — the controls never sit inside it, and nothing
+   wraps the artwork in a frame, a radius or a shadow. */
+
+.cs-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 26px;
+  align-items: start;
+  padding-bottom: 34px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.cs-stage {
+  position: relative;
+  overflow: hidden;
+  flex: none;
+}
+
+.cs-stage-scale {
+  transform-origin: top left;
+}
+
+.cs-panel {
+  min-width: 0;
+}
+
+.cs-item-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+
+.cs-item-number {
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.cs-item-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.cs-item-actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 11px;
+  border-radius: 999px;
+  border: 1px solid var(--rule);
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  background: var(--paper-raised);
+  transition: border-color 0.18s ease, color 0.18s ease;
+}
+
+.cs-item-actions button:hover:not(:disabled) {
+  border-color: var(--rule-strong);
+  color: var(--ink);
+}
+
+.cs-item-actions .cs-remove:hover:not(:disabled) {
+  border-color: rgba(176, 86, 58, 0.5);
+  color: var(--clay);
+}
+
+/* ============================================================================
+   Slide artwork — the photograph IS the slide.
+
+   The canvas is a fixed 1080 x 1350. The preview never resizes it: it scales
+   the whole thing with a transform, so the screen and the exported PNG are the
+   same object at different sizes. Nothing here may introduce a margin, a
+   radius, a border or a shadow around the slide — it must read as a
+   photograph, not as a component.
+   ========================================================================== */
+
+/* The canvas itself. Always exactly 1080 x 1350, always edge to edge, and
+   always painting its own type in white: the photograph decides the content,
+   never a panel behind it. The editor scales this node with a transform, so
+   the screen preview and the exported PNG are the same object. */
+.slide {
+  position: relative;
+  width: 1080px;
+  height: 1350px;
+  flex: none;
+  overflow: hidden;
+  isolation: isolate;
+  color: #fff;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: #100e0b;
+  text-align: left;
+}
+
+.slide-photo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 50%;
+  z-index: 0;
+  display: block;
+}
+
+/* No photograph assigned. A neutral ground, never an invented image. */
+.slide-photo-empty {
+  background: radial-gradient(120% 90% at 28% 18%, #2b2621 0%, #191511 55%, #100e0b 100%);
+}
+
+/* ---- readability: gradients only, never an opaque panel ---- */
+
+.slide-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.slide-overlay-bottom {
+  background: linear-gradient(
+    to top,
+    rgba(14, 11, 8, 0.86) 0%,
+    rgba(14, 11, 8, 0.62) 20%,
+    rgba(14, 11, 8, 0.26) 42%,
+    rgba(14, 11, 8, 0) 62%
+  );
+}
+
+.slide-overlay-left {
+  background: linear-gradient(
+    to right,
+    rgba(14, 11, 8, 0.84) 0%,
+    rgba(14, 11, 8, 0.55) 32%,
+    rgba(14, 11, 8, 0.14) 56%,
+    rgba(14, 11, 8, 0) 72%
+  );
+}
+
+/* Mirrored for right-hand type, which needs its dark side on the right. */
+[data-anchor$='-right'] .slide-overlay-left {
+  background: linear-gradient(
+    to left,
+    rgba(14, 11, 8, 0.84) 0%,
+    rgba(14, 11, 8, 0.55) 32%,
+    rgba(14, 11, 8, 0.14) 56%,
+    rgba(14, 11, 8, 0) 72%
+  );
+}
+
+.slide-overlay-top {
+  background: linear-gradient(
+    to bottom,
+    rgba(14, 11, 8, 0.76) 0%,
+    rgba(14, 11, 8, 0.34) 26%,
+    rgba(14, 11, 8, 0) 48%
+  );
+}
+
+.slide-overlay-wash {
+  background: linear-gradient(
+    to bottom,
+    rgba(14, 11, 8, 0.42) 0%,
+    rgba(14, 11, 8, 0.3) 50%,
+    rgba(14, 11, 8, 0.48) 100%
+  );
+}
+
+.slide-overlay-warm {
+  background: linear-gradient(
+    to top,
+    rgba(38, 17, 6, 0.78) 0%,
+    rgba(46, 24, 10, 0.44) 34%,
+    rgba(58, 32, 14, 0.12) 58%,
+    rgba(58, 32, 14, 0) 74%
+  );
+}
+
+/* Cinematic grade: deeper, but the photograph is still fully present. */
+.slide-grade {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.slide-grade-cinematic {
+  background:
+    radial-gradient(130% 100% at 50% 42%, rgba(0, 0, 0, 0) 38%, rgba(0, 0, 0, 0.4) 100%),
+    linear-gradient(to bottom, rgba(10, 14, 20, 0.28) 0%, rgba(10, 14, 20, 0.06) 45%, rgba(6, 8, 12, 0.4) 100%);
+  mix-blend-mode: multiply;
+}
+
+/* The app's global reset paints h1-h4 and paragraphs in ink, which is invisible
+   over a photograph. Everything inside a slide inherits the slide's own colour
+   and starts from a zero margin, so the artwork is immune to that reset. */
+.slide h1,
+.slide h2,
+.slide h3,
+.slide h4,
+.slide h5,
+.slide h6,
+.slide p,
+.slide ol,
+.slide ul,
+.slide li,
+.slide dl,
+.slide dt,
+.slide dd {
+  color: inherit;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.slide ol,
+.slide ul {
+  list-style: none;
+}
+
+/* ---- type placement: a 3x3 field with one block in one cell ---- */
+
+.slide-type-grid {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+}
+
+.slide-type {
+  padding: 92px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 26px;
+  text-shadow: 0 2px 26px rgba(0, 0, 0, 0.42);
+}
+
+[data-anchor='top-left'] .slide-type { grid-area: 1 / 1; justify-content: flex-start; }
+[data-anchor='top-center'] .slide-type { grid-area: 1 / 2; justify-content: flex-start; text-align: center; align-items: center; }
+[data-anchor='top-right'] .slide-type { grid-area: 1 / 3; justify-content: flex-start; text-align: right; align-items: flex-end; }
+[data-anchor='center-left'] .slide-type { grid-area: 2 / 1; justify-content: center; }
+[data-anchor='center-center'] .slide-type { grid-area: 2 / 2; justify-content: center; text-align: center; align-items: center; }
+[data-anchor='center-right'] .slide-type { grid-area: 2 / 3; justify-content: center; text-align: right; align-items: flex-end; }
+[data-anchor='bottom-left'] .slide-type { grid-area: 3 / 1; justify-content: flex-end; }
+[data-anchor='bottom-center'] .slide-type { grid-area: 3 / 2; justify-content: flex-end; text-align: center; align-items: center; }
+[data-anchor='bottom-right'] .slide-type { grid-area: 3 / 3; justify-content: flex-end; text-align: right; align-items: flex-end; }
+
+/* ---- type ---- */
+
+.slide-kicker {
+  font-family: var(--sans);
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.82);
+  margin: 0;
+}
+
+.slide-display {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: 128px;
+  line-height: 0.92;
+  letter-spacing: -0.038em;
+  margin: 0;
+  text-wrap: balance;
+}
+
+.slide-standfirst {
+  font-family: var(--sans);
+  font-size: 33px;
+  line-height: 1.34;
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0;
+  max-width: 22ch;
+}
+
+.slide-statement {
+  font-family: var(--serif);
+  font-size: 62px;
+  line-height: 1.14;
+  letter-spacing: -0.022em;
+  margin: 0;
+  max-width: 17ch;
+  text-wrap: pretty;
+}
+
+.slide-body {
+  font-family: var(--sans);
+  font-size: 32px;
+  line-height: 1.42;
+  color: rgba(255, 255, 255, 0.88);
+  margin: 0;
+}
+
+.slide-cta {
+  font-family: var(--sans);
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.72);
+  margin: 0;
+}
+
+/* Ingredients: the measurement leads, the food follows. Spacing separates
+   them — there is no box around either. */
+
+.slide-ingredients {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.slide-ingredient {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.slide-ingredient dt {
+  font-family: var(--sans);
+  font-size: 46px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+  color: #fff;
+}
+
+.slide-ingredient dd {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 40px;
+  line-height: 1.14;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* Method: large numerals, short lines. */
+
+.slide-steps {
+  margin: 0;
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 34px;
+}
+
+.slide-step {
+  display: flex;
+  align-items: baseline;
+  gap: 30px;
+}
+
+.slide-step-label {
+  font-family: var(--sans);
+  font-size: 40px;
+  font-weight: 800;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.62);
+  flex: 0 0 auto;
+  min-width: 78px;
+}
+
+.slide-step-text {
+  font-family: var(--serif);
+  font-size: 44px;
+  line-height: 1.16;
+  letter-spacing: -0.014em;
+  color: #fff;
+}
+
+/* ---- three looks, one system ---- */
+
+/* Modern creator: sans display, heavier, tighter. */
+[data-slide-style='creator'] .slide-display {
+  font-family: var(--sans);
+  font-weight: 800;
+  font-size: 120px;
+  line-height: 0.9;
+  letter-spacing: -0.045em;
+}
+
+[data-slide-style='creator'] .slide-kicker {
+  font-size: 22px;
+  letter-spacing: 0.28em;
+}
+
+[data-slide-style='creator'] .slide-ingredient dd,
+[data-slide-style='creator'] .slide-step-text {
+  font-family: var(--sans);
+  font-size: 36px;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+/* Editorial: quieter standfirst, wider kicker tracking. */
+[data-slide-style='editorial'] .slide-kicker {
+  font-weight: 600;
+  letter-spacing: 0.3em;
+}
+
+/* Cinematic: elegant, minimal, a little more air. */
+[data-slide-style='cinematic'] .slide-display {
+  font-size: 114px;
+  letter-spacing: -0.022em;
+}
+
+[data-slide-style='cinematic'] .slide-statement {
+  font-size: 58px;
+  letter-spacing: -0.01em;
+}
+
+[data-slide-style='cinematic'] .slide-kicker {
+  font-weight: 500;
+  letter-spacing: 0.34em;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+[data-slide-style='cinematic'] .slide-standfirst {
+  font-size: 30px;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.cs-edit {
+  border: 1px dashed var(--rule-strong);
+  border-radius: 14px;
+  padding: 18px;
+  background: var(--paper-raised);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cs-edit input,
+.cs-edit textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--rule);
+  background: var(--paper);
+  outline: none;
+}
+
+.cs-edit input:focus,
+.cs-edit textarea:focus {
+  border-color: var(--clay);
+}
+
+.cs-edit input {
+  font-family: var(--serif);
+  font-size: 19px;
+}
+
+.cs-edit textarea {
+  font-family: var(--serif);
+  font-size: 15px;
+  line-height: 1.55;
+  resize: vertical;
+}
+
+.cs-evidence {
+  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.cs-evidence > span:first-child {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-right: 4px;
+}
+
+/* ------------------------------- pack drawer ------------------------------ */
+
+.pack-carousel-note {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--sage-soft);
+  color: var(--sage);
+  font-size: 13px;
+}
+
 /* -------------------------------- responsive ------------------------------- */
 
 @media (max-width: 1080px) {
@@ -2328,6 +3303,297 @@ img {
   }
 }
 
+.cs-list {
+  display: flex;
+  flex-direction: column;
+  gap: 44px;
+}
+
+.cs-controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin: 14px 0 16px;
+}
+
+.cs-control {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.cs-control > span,
+.cs-control-label {
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.cs-control-hint {
+  display: block;
+  font-size: 11.5px;
+  color: var(--muted);
+  font-style: italic;
+  margin-top: 3px;
+}
+
+.cs-control select {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--rule);
+  background: var(--paper-raised);
+  font-family: var(--sans);
+  font-size: 13px;
+  color: var(--ink);
+  outline: none;
+}
+
+.cs-control select:focus {
+  border-color: var(--clay);
+}
+
+/* Focus grid: doubles as the composition diagram for where the food sits. */
+
+.cs-focus {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 14px;
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  background: var(--paper-raised);
+}
+
+.focus-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2px;
+  width: 60px;
+  padding: 3px;
+  border-radius: 4px;
+  background: var(--paper-sunk);
+  flex: none;
+}
+
+.focus-cell {
+  aspect-ratio: 1;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  border-radius: 2px;
+}
+
+.focus-cell span {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(33, 31, 27, 0.3);
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.focus-cell:hover span {
+  background: var(--clay);
+}
+
+.focus-cell-on span {
+  background: var(--clay);
+  transform: scale(2.2);
+}
+
+/* Photograph picker. */
+
+.cs-picker {
+  margin-top: 14px;
+}
+
+.cs-picker-strip {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  margin-top: 7px;
+}
+
+.pick {
+  flex: none;
+  width: 52px;
+  height: 52px;
+  padding: 0;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--rule);
+  background: var(--paper-sunk);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+}
+
+.pick img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.pick-on {
+  border-color: var(--clay);
+  box-shadow: 0 0 0 2px rgba(176, 86, 58, 0.28);
+}
+
+.pick-none {
+  background: var(--paper-sunk);
+}
+
+.cs-picker-empty {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--muted);
+  margin: 7px 0 0;
+}
+
+/* Repeatable ingredient / step rows. */
+
+.cs-repeat {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.cs-repeat-row {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr) 30px;
+  gap: 7px;
+  align-items: center;
+}
+
+.cs-repeat-row input {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--rule);
+  background: var(--paper);
+  font-family: var(--sans);
+  font-size: 13.5px;
+  outline: none;
+}
+
+.cs-repeat-row input:focus {
+  border-color: var(--clay);
+}
+
+.cs-amount {
+  font-weight: 700 !important;
+  color: var(--clay);
+}
+
+.cs-repeat-row button {
+  display: grid;
+  place-items: center;
+  height: 30px;
+  border-radius: 6px;
+  border: 1px solid var(--rule);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.cs-repeat-row button:hover {
+  color: var(--clay);
+  border-color: rgba(176, 86, 58, 0.5);
+}
+
+.cs-edit label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.cs-edit label > span {
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* Look controls and export feedback. */
+
+.plan-look {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.plan-look-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.look-chips {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+
+.look-chip {
+  padding: 8px 15px;
+  border-radius: 999px;
+  border: 1px solid var(--rule);
+  background: var(--paper-raised);
+  font-family: var(--sans);
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+
+.look-chip:hover {
+  border-color: var(--rule-strong);
+  color: var(--ink);
+}
+
+.look-chip-on {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
+}
+
+.plan-look-note {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.plan-export-note {
+  margin: 0 0 18px;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+.button-small {
+  padding: 7px 12px;
+  font-size: 12.5px;
+}
+
+.spin {
+  animation: cs-spin 0.9s linear infinite;
+}
+
+@keyframes cs-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 @media (max-width: 900px) {
   .main-nav {
     display: none;
@@ -2349,6 +3615,18 @@ img {
   .start-form-fields {
     grid-template-columns: 1fr;
     gap: 0;
+  }
+
+  .type-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+.cs-item {
+    max-width: 100%;
+  }
+
+  .plan-head-actions {
+    width: 100%;
   }
 
   .recent-list {
@@ -2440,10 +3718,6 @@ img {
     display: none;
   }
 
-  .slide {
-    grid-template-columns: 32px minmax(0, 1fr);
-  }
-
   .slide-controls {
     grid-column: 2;
     flex-direction: row;
@@ -2456,5 +3730,49 @@ img {
 
   .idea-row-label {
     padding-top: 0;
+  }
+
+  .type-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .recipe-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .recipe-facts {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .compare-list {
+    grid-template-columns: 1fr;
+  }
+
+  .mid-cta {
+    padding: 28px 22px;
+    flex-direction: column;
+    align-items: stretch;
+    text-align: center;
+  }
+
+  .plan-title-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .cs-item-bar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  /* One column on narrow screens: preview above its own controls. */
+  .cs-item {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+  }
+
+  .direction-row .direction {
+    flex: 1 1 100%;
   }
 }
